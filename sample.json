@@ -1,0 +1,12 @@
+{
+    "fastq_file": [
+        {
+        "class": "File",
+        "path": "redwood://storage.ucsc-cgl.org/f392f79c-a9f3-11e6-80f5-76304dec7eb7/f39300fc-a9f3-11e6-80f5-76304dec7eb7/NA12878-NGv3-LAB1360-A_1.fastq.gz"
+        },
+        {
+        "class": "File",
+        "path": "redwood://storage.ucsc-cgl.org/f392f79c-a9f3-11e6-80f5-76304dec7eb7/f392fea4-a9f3-11e6-80f5-76304dec7eb7/NA12878-NGv3-LAB1360-A_2.fastq.gz"
+        }
+    ]
+}
