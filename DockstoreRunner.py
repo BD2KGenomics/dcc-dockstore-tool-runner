@@ -30,21 +30,38 @@ class DockstoreRunner:
         # run
         self.run()
 
+    def convert_to_local_path(self, path):
+        uri_pieces = path.split("/")
+        bundle_uuid = uri_pieces[3]
+        file_uuid = uri_pieces[4]
+        file_path = uri_pieces[5]
+        print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
+        return("./tmp/"+bundle_uuid+"/"+file_path)
+
     def download_and_transform_json(self, json_encoded):
         decoded = base64.urlsafe_b64decode(json_encoded)
         # TODO: so this needs to idenitfy anything with redwood:// and transform it to local path. Also need to deal with output paths
         parsed_json = json.loads(decoded)
         print "PARSED JSON: "+decoded
+        map_of_redwood_to_local = {}
         for key, value in parsed_json.iteritems():
             print "ITEM: "+key
             if isinstance(value, dict):
                 if parsed_json[key]['class'] == 'File':
                     path = parsed_json[key]['path']
                     print "PATH: "+path
-            else:
+                    map_of_redwood_to_local[path] = self.convert_to_local_path(path)
+                    parsed_json[key]['path'] = map_of_redwood_to_local[path]
+            else: # then assuming it's an array!
                 for arr_value in parsed_json[key]:
-                    path = arr_value['path']
-                    print "PATH: "+path
+                    if arr_value['class'] == 'File':
+                        path = arr_value['path']
+                        print "PATH: "+path
+                        map_of_redwood_to_local[path] = self.convert_to_local_path(path)
+                        arr_value['path'] = map_of_redwood_to_local[path]
+        f = open('updated_sample.json', 'w')
+        print >>f, json.dumps(parsed_json)
+        f.close()
         #for curr_uuid in self.
         # LEFT OFF HERE
         # foreach, download
