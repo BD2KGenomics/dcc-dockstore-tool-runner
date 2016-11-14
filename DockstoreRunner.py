@@ -62,6 +62,7 @@ class DockstoreRunner:
         f = open('updated_sample.json', 'w')
         print >>f, json.dumps(parsed_json)
         f.close()
+        # now download each
         for curr_redwood_url in map_of_redwood_to_local.keys():
             print "URL: "+curr_redwood_url
             uri_pieces = curr_redwood_url.split("/")
@@ -70,37 +71,38 @@ class DockstoreRunner:
             file_path = uri_pieces[5]
             cmd = "mkdir -p ./tmp && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir ./tmp/ --object-id "+file_uuid+" --output-layout bundle"
             print cmd
-
-        # LEFT OFF HERE
-        # foreach, download
-        #cmd = "java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url="+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url="+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir ./ --object-id "+self.uuid+" --output-layout bundle"
-        #print cmd
-#        result = subprocess.call(cmd, shell=True)
-#        print "DOWNLOAD RESULT: "+str(result)
-#        if result == 0:
-#            p = self.output().open('w')
-#            print >>p, "finished downloading"
-#            p.close()
-#        # update JSON structure
-#        # write out new JSON file and return path
+            result = subprocess.call(cmd, shell=True)
+            print "DOWNLOAD RESULT: "+str(result)
+        return('updated_sample.json')
 
     def run(self):
         print "** DOWNLOAD **"
+        d_start = time.time()
         # this will download and create a new JSON
         transformed_json_path = self.download_and_transform_json(self.json_encoded)
+        d_end = time.time()
+        d_diff = int(d_end - d_start)
+        print "START: "+str(d_start)+" END: "+str(d_end)+" DIFF: "+str(d_diff)
 
-#        print "** RUN DOCKSTORE TOOL **"
-#        cmd = "dockstore tool run --json "+transformed_json_path+" --other args "
-#        print cmd
-#
-#        print "** UPLOAD **"
-#        # TODO: need to iterate over the outputs, prepare upload, perform upload, cleanup
+        print "** RUN DOCKSTORE TOOL **"
+        t_start = time.time()
+        cmd = "dockstore tool launch --entry "+self.dockstore_uri+" --json "+transformed_json_path
+        print cmd
+        t_end = time.time()
+        t_diff = int(t_end - t_start)
+
+        # timing information
+        print "TIME: "+str(datetime.utcnow())
+
+        print "** UPLOAD **"
+        # TODO: need to iterate over the outputs, prepare upload, perform upload, cleanup
 #        cmd = '''mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && ln -s %s/%s/bamstats_report.zip %s/%s/metadata.json %s/%s/upload/%s && \
 #echo "Register Uploads:" && \
 #java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=%s:8444 -DaccessToken=`cat %s/accessToken` -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/%s/upload/%s -o %s/%s/manifest/%s -m manifest.txt && \
 #echo "Performing Uploads:" && \
 #java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=%s:5431 -DaccessToken=`cat %s/accessToken` -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/%s/manifest/%s/manifest.txt
 #''' % (self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.data_dir, self.bundle_uuid, self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.ucsc_storage_client_path, self.ucsc_storage_host, self.ucsc_storage_client_path, self.ucsc_storage_client_path, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.ucsc_storage_client_path, self.ucsc_storage_host, self.ucsc_storage_host, self.ucsc_storage_client_path, self.ucsc_storage_client_path, self.tmp_dir, self.bundle_uuid, self.upload_uuid)
+        #
 #        print "CMD: "+cmd
 #        result = subprocess.call(cmd, shell=True)
 #        if result == 0:
