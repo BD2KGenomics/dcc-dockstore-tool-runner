@@ -30,6 +30,29 @@ class DockstoreRunner:
         # run
         self.run()
 
+    def map_params(self, transformed_json_path):
+        params_map = {}
+        file_map = {}
+        with open(transformed_json_path) as data_file:
+            data = json.load(data_file)
+        for key, value in data.iteritems():
+            print "ITEM: "+key
+            if isinstance(value, dict):
+                if parsed_json[key]['class'] == 'File':
+                    file_map[key] = True
+            elif isinstance(value, list):
+                for arr_value in parsed_json[key]:
+                    if isinstance (arr_value, dict):
+                        if arr_value['class'] == 'File':
+                            path = arr_value['path']
+                            print "PATH: "+path
+                            map_of_redwood_to_local[path] = self.convert_to_local_path(path)
+                            arr_value['path'] = map_of_redwood_to_local[path]
+            else: # then it's a scalar?
+                sdf
+        return(params_map)
+
+
     def convert_to_local_path(self, path):
         uri_pieces = path.split("/")
         bundle_uuid = uri_pieces[3]
@@ -108,6 +131,10 @@ class DockstoreRunner:
    ],
    "workflow_bundle_url" : "%s",
    "workflow_params" : {
+'''
+for param in self.map_params(transformed_json_path):
+    sdfds
+metadata += '''
       "param1" : 12121,
       "param2" : 2389239
    },
