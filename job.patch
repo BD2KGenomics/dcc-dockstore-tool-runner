@@ -1,0 +1,49 @@
+--- job.py	2016-11-15 00:55:42.333183464 +0000
++++ job_new.py	2016-11-15 22:05:33.879862963 +0000
+@@ -96,6 +96,19 @@
+ 
+         if img_id:
+             runtime = ["docker", "run", "-i"]
++ 
++            #extra mount point to enable dockstore calls from a dockstore container
++            #by providing the host's docker socket which allows access to the host's
++            #docker engine
++            runtime.append(u"--volume=%s:%s:rw" % ("/var/run/docker.sock", "/var/run/docker.sock"))
++
++            #add a volume where the output/working dir on the host is mapped to the same
++            #path name inside the container. This is needed because we will want
++            #the container that is launched from this container to have a path
++            #that exists on the host. 
++            #This is set by using the env variable TMPDIR on the host  
++            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.outdir)), os.path.normpath(os.path.dirname(self.outdir))))
++ 
+             for src in self.pathmapper.files():
+                 vol = self.pathmapper.mapper(src)
+                 if vol.type == "File":
+@@ -105,9 +118,23 @@
+                     with open(createtmp, "w") as f:
+                         f.write(vol.resolved.encode("utf-8"))
+                     runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
+-            runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.outdir), "/var/spool/cwl"))
+-            runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.tmpdir), "/tmp"))
+-            runtime.append(u"--workdir=%s" % ("/var/spool/cwl"))
++
++            #do not use temporary paths at the end of the cwd because containers called from containers
++            #via cwltool must be able to find files in a single temporary directory on the host.
++            #each call to cwltool creates a temporary directory where files are staged
++            #so containers further down the creation chain cannot find them
++            #These are set by using the env variable TMPDIR on the host  
++            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.outdir)), "/var/spool/cwl"))
++            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.tmpdir)), "/tmp"))
++#            runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.outdir), "/var/spool/cwl"))
++#            runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.tmpdir), "/tmp"))
++
++            #make the working directory a path on the host machine so the input files
++            #are staged there. This way the container called from this container can find them
++            #and we can be sure there is plenty of storage space for them
++            #This is set by using the env variable TMPDIR on the host  
++            runtime.append(u"--workdir=%s" % (os.path.normpath(os.path.dirname(self.tmpdir))))
++#            runtime.append(u"--workdir=%s" % ("/var/spool/cwl"))
+             runtime.append("--read-only=true")
+             if (kwargs.get("enable_net", None) is None and
+                     kwargs.get("custom_net", None) is not None):
