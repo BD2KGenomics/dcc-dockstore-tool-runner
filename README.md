@@ -37,8 +37,8 @@ Alternatively, you may want to use Conda, see [here](http://conda.pydata.org/doc
  [here](http://conda.pydata.org/docs/test-drive.html), and [here](http://kylepurdon.com/blog/using-continuum-analytics-conda-as-a-replacement-for-virtualenv-pyenv-and-more.html)
  for more information.
 
-    conda create -n schemas-project python=2.7.11
-    source activate schemas-project
+    conda create -n dockstore-tool-runner-project python=2.7.11
+    source activate dockstore-tool-runner-project
     pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi python-dateutil cwl-runner cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7 typing
 
 ### Redwood Client
