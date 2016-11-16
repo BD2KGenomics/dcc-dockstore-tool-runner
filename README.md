@@ -66,7 +66,7 @@ NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPA
 
 Sample:
 
-    dockstore tool launch --entry quay.io/wshands/fastqc:latest --json updated_sample.json
+    dockstore tool launch --entry quay.io/ucsc-cgl/DockstoreRunner:latest --json Docstore.json
 
 ## Known Issues
 
