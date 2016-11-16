@@ -1,9 +1,10 @@
 # dcc-dockstore-tool-runner
-A Dockstore tool designed to perform file downloads from Redwood, run another Dockstore tool, and then upload to Redwood.
+
+A Dockstore tool designed to perform file downloads from Redwood, run another Dockstore tool, and then prepare a metadata.json and upload results to Redwood.
 
 ## Running Locally
 
-Normally you would not run locally, you are always going to run this via Dockstore or, maybe, via Docker.  For development purposes, though, you may want to setup a local environment for debugging and extending this tool.
+Normally you would not run directly, you are always going to run this via Dockstore or, maybe, via Docker.  For development purposes, though, you may want to setup a local environment for debugging and extending this tool.
 
 ## Install Deps
 
@@ -30,7 +31,7 @@ Now to setup:
 
     virtualenv env
     source env/bin/activate
-    pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi python-dateutil cwl-runner cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7 typing
+    pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi python-dateutil cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1 typing
 
 Alternatively, you may want to use Conda, see [here](http://conda.pydata.org/docs/_downloads/conda-pip-virtualenv-translator.html)
  [here](http://conda.pydata.org/docs/test-drive.html), and [here](http://kylepurdon.com/blog/using-continuum-analytics-conda-as-a-replacement-for-virtualenv-pyenv-and-more.html)
@@ -40,17 +41,26 @@ Alternatively, you may want to use Conda, see [here](http://conda.pydata.org/doc
     source activate schemas-project
     pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi python-dateutil cwl-runner cwltool==1.0.20160316150250 schema-salad==1.7.20160316150109 avro==1.7.7 typing
 
+### Redwood Client
+
+You will need a copy of the Redwood client, you can download it from [here](https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/ucsc-storage-client.tar.gz).
+
 ### Testing Command
 
-    python DockstoreRunner.py --redwood-path foo --redwood-token token --redwood-host host --json-encoded e30= --dockstore-uri uri --parent-uuid id
+The command below will download samples from Redwood, run fastqc from Dockstore on two fastq files, and then upload the results back to a Redwood storage system.
 
-    python DockstoreRunner.py --redwood-path foo --redwood-token token --redwood-host host --json-encoded ew0KICAgICJmYXN0cV9maWxlIjogWw0KICAgICAgICB7DQogICAgICAgICJjbGFzcyI6ICJGaWxlIiwNCiAgICAgICAgInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UudWNzYy1jZ2wub3JnL2YzOTJmNzljLWE5ZjMtMTFlNi04MGY1LTc2MzA0ZGVjN2ViNy9mMzkzMDBmYy1hOWYzLTExZTYtODBmNS03NjMwNGRlYzdlYjcvTkExMjg3OC1OR3YzLUxBQjEzNjAtQV8xLmZhc3RxLmd6Ig0KICAgICAgICB9LA0KICAgICAgICB7DQogICAgICAgICJjbGFzcyI6ICJGaWxlIiwNCiAgICAgICAgInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UudWNzYy1jZ2wub3JnL2YzOTJmNzljLWE5ZjMtMTFlNi04MGY1LTc2MzA0ZGVjN2ViNy9mMzkyZmVhNC1hOWYzLTExZTYtODBmNS03NjMwNGRlYzdlYjcvTkExMjg3OC1OR3YzLUxBQjEzNjAtQV8yLmZhc3RxLmd6Ig0KICAgICAgICB9DQogICAgXQ0KfQ== --dockstore-uri uri --parent-uuid id
+    # example with real files
+    python DockstoreRunner.py --redwood-path `pwd`/ucsc-storage-client --redwood-token `cat accessToken` --redwood-host storage2.ucsc-cgl.org --json-encoded ew0KCSJmYXN0cV9maWxlIjogWw0KDQoJCXsNCgkJCSJjbGFzcyI6ICJGaWxlIiwNCgkJCSJwYXRoIjogInJlZHdvb2Q6Ly9zdG9yYWdlMi51Y3NjLWNnbC5vcmcvOGViZGIwM2EtM2M5OS01ZjMyLTgxMWMtOWQ3NGI4ODE1MWVjLzJlYWRjYzY1LTQ0YWYtNTI3Yy1hMWE3LTIyYzNhNTVkNzM2ZS9FUlIwMzA4ODZfMS5mYXN0cS5neiINCgkJfSwgew0KCQkJImNsYXNzIjogIkZpbGUiLA0KCQkJInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UyLnVjc2MtY2dsLm9yZy84ZWJkYjAzYS0zYzk5LTVmMzItODExYy05ZDc0Yjg4MTUxZWMvODM0NTIzZjMtN2RkZi01MDg2LWExNzMtMTA4MDYwYWVlZTc3L0VSUjAzMDg4Nl8yLmZhc3RxLmd6Ig0KCQl9DQoJXQ0KfQ== --dockstore-uri quay.io/wshands/fastqc --parent-uuid id
 
 This encoded string corresponds to the contents of `sample.json`.
 
 ## Via Docker
 
 ## Via Dockstore
+
+Sample:
+
+    dockstore tool launch --entry quay.io/wshands/fastqc:latest --json updated_sample.json
 
 ## Known Issues
 

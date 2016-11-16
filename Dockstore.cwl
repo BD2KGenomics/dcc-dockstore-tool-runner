@@ -5,17 +5,17 @@ id: "dockstore_tool_runner"
 label: "container that can call dockstore"
 cwlVersion: v1.0
 doc: |
-    ![build_status](https://quay.io/wshands/dockstore_tool_runner/status)
+    ![build_status](https://quay.io/ucsc_cgl/DockstoreRunner/status)
     A Docker container from which Dockstore containers may be launched.
     ```
     Usage:
     # fetch CWL
-    $> dockstore tool cwl --entry quay.io/wshands/dockstore_tool_runner > dockstore_tool_runner.cwl
+    $> dockstore tool cwl --entry quay.io/ucsc_cgl/DockstoreRunner > Dockstore.cwl
     # make a runtime JSON template and edit it
-    $> dockstore tool convert cwl2json --cwl dockstore_tool_runner.cwl > dockstore_tool_runner.json
+    $> dockstore tool convert cwl2json --cwl Dockstore.cwl > Dockstore.json
     # run it locally with the Dockstore CLI
-    $> dockstore tool launch --entry quay.io/wshands/dockstore_tool_runner  --json dockstore_tool_runner.json
-    ```
+    $> dockstore tool launch --entry quay.io/ucsc_cgl/DockstoreRunner  --json Dockstore.json
+   ```
 
 #dct:creator:
 #  "@id": "jshands@ucsc.edu"
@@ -24,21 +24,7 @@ doc: |
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/wshands/dockstore_tool_runner"
-#    dockerImageId: dockstore_tool_runner
-  #need this since dockstore is in 
-  #/home/ubuntu and the HOME dir is set by 
-  #cwltool as /var/... 
-#  - class: EnvVarRequirement
-#    envDef:
-#      - envName: HOME
-#        envValue: "/home/ubuntu"
-#        envValue: $(inputs.HOME)
-
-#arguments:
-#  - valueFrom: tool
-#  - valueFrom: launch
-
+    dockerPull: "quay.io/ucsc_cgl/DockstoreRunner"
 hints:
   - class: ResourceRequirement
     coresMin: 1
@@ -47,17 +33,17 @@ hints:
     description: "the process requires at least 4G of RAM"
 
 inputs:
-  json_file:
+  json-encoded:
     type: File
     doc: "Path to JSON file for container to be run by Dockstore"
     inputBinding:
-      prefix: --json_file
+      prefix: --json-encoded
 
-  docker_image:
+  dockstore-uri:
     type: string
     doc: "Path to docker image from which to create container"
     inputBinding:
-      prefix: --docker_image
+      prefix: --dockstore-uri
 
   tmpdir:
     type: string
@@ -76,4 +62,4 @@ outputs:
     doc: "Result files from container run on the host"
 
 
-baseCommand: ["dockstore_tool_runner.py"]
+baseCommand: ["DockstoreRunner.py"]

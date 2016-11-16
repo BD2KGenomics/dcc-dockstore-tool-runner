@@ -1,7 +1,7 @@
 {
-  "docker_image": "quay.io/wshands/fastqc",
+  "dockstore-uri": "quay.io/wshands/fastqc",
 
-  "json_file": {
+  "json-encoded": {
         "class": "File",
         "path": "/mnt/actiontest/fastqc.json"
     },
