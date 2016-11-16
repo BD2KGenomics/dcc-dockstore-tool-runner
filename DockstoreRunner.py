@@ -8,6 +8,15 @@ import base64
 from urllib import urlopen
 from uuid import uuid4
 
+# TODO:
+# Items needed:
+# * analysis type
+# * workflow name
+# * workflow version
+# * input_bundle_uuids
+# * input_file_uuids
+# * host VM type, cloud, region
+
 class DockstoreRunner:
 
     def __init__(self):
@@ -44,13 +53,11 @@ class DockstoreRunner:
                 for arr_value in parsed_json[key]:
                     if isinstance (arr_value, dict):
                         if arr_value['class'] == 'File':
-                            path = arr_value['path']
-                            print "PATH: "+path
-                            map_of_redwood_to_local[path] = self.convert_to_local_path(path)
-                            arr_value['path'] = map_of_redwood_to_local[path]
+                            file_map[key] = True
+                    # can scalars be passed as an array or is it only files?
             else: # then it's a scalar?
-                sdf
-        return(params_map)
+                params_map[key] = value
+        return(params_map, file_map)
 
 
     def convert_to_local_path(self, path):
@@ -112,6 +119,7 @@ class DockstoreRunner:
         print "** RUN DOCKSTORE TOOL **"
         t_utc_datetime = datetime.utcnow()
         t_start = time.time()
+        # WALT: this is where we need to integration your work
         cmd = "dockstore tool launch --entry "+self.dockstore_uri+" --json "+transformed_json_path
         print cmd
         t_end = time.time()
@@ -122,6 +130,8 @@ class DockstoreRunner:
         utc_datetime = datetime.utcnow()
         print "TIME: "+str(utc_datetime.isoformat("T"))
 
+        print "** UPLOAD **"
+
         metadata = '''
 {
    "version" : "1.0.0",
@@ -130,15 +140,32 @@ class DockstoreRunner:
       "%s"
    ],
    "workflow_bundle_url" : "%s",
+   "workflow_name" : "%s"
    "workflow_params" : {
 '''
-for param in self.map_params(transformed_json_path):
-    sdfds
-metadata += '''
-      "param1" : 12121,
-      "param2" : 2389239
+        i=0
+        (params_map, file_map) = self.map_params(transformed_json_path)
+        while i<len(params_map.keys()):
+            metadata += '''"%s": "%s"'''
+            if i < len(params_map.keys()) - 1:
+                metadata += ","
+            i += 1
+        metadata += '''
    },
    "workflow_outputs" : {
+   '''
+
+        i=0
+        (params_map, file_map) = self.map_params(transformed_json_path)
+        while i<len(params_map.keys()):
+            metadata += '''
+            "%s": "%s"
+
+            '''
+            if i < len(params_map.keys()) - 1:
+                metadata += ","
+            i += 1
+
       "foo.bam.bai" : {
          "file_type_label" : "bai",
          "file_type_cv_terms" : [
@@ -151,6 +178,8 @@ metadata += '''
             "EDAM:1293829"
          ]
       }
+
+      metadata += '''
    },
    "workflow_inputs" : [
       {
@@ -174,11 +203,8 @@ metadata += '''
          "file_storage_bundle_uri" : "0e99945c-631e-4123-9158-5132a8fe2150"
       }
    ],
-   "workflow_version" : "1.0.0",
+   "workflow_version" : "%s",
    "qc_metrics" : {
-      "insert_size_average" : 10456,
-      "insert_size_sd" : 313,
-      "coverage_average" : 123.4
    },
    "timing_metrics" : {
       "step_timing" : {
@@ -188,24 +214,23 @@ metadata += '''
             "start_time_utc" : "Thu Apr 14 22:18:30 UTC 2016"
          }
       },
-      "overall_stop_time_utc" : "Thu Apr 14 24:18:30 UTC 2016",
-      "overall_start_time_utc" : "Thu Apr 14 22:18:30 UTC 2016",
-      "overall_walltime_seconds" : 60000
+      '''
+        metadata += '''
+      "overall_stop_time_utc" : "%s",
+      "overall_start_time_utc" : "%s",
+      "overall_walltime_seconds" : %s
    },
-   "workflow_description" : "This is the alignment for specimen PD41189 from donor CGP_donor_1199138.",
-   "workflow_source_url" : "http://foo.bar/bwa-workflow-src",
    "host_metrics" : {
       "vm_instance_type" : "m1.xlarge",
       "vm_region" : "us-east-1",
       "vm_instance_cores" : 4,
       "vm_instance_mem_gb" : 256,
       "vm_location" : "aws"
-   },
-   "workflow_name" : "bwa-mem-alignment"
+   }
 }
         '''
 
-        print "** UPLOAD **"
+
         # TODO: need to iterate over the outputs, prepare upload, perform upload, cleanup
 #        cmd = '''mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && ln -s %s/%s/bamstats_report.zip %s/%s/metadata.json %s/%s/upload/%s && \
 #echo "Register Uploads:" && \
