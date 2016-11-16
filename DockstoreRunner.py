@@ -179,6 +179,7 @@ class DockstoreRunner:
         # TODO: will need to work with the original input JSON with redwood URLs so I can get the budle/file IDs properly
         # TODO: I don't see a way to find out the metadata.json UUID
         i=0
+        # LEFT OFF HERE: need to create a map for output files (from stdout of cwltools) and input files (from original JSON with redwood URLs)
         (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
         while i<len(file_input_map.keys()):
             metadata += '''{
