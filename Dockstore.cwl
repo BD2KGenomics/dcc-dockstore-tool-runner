@@ -33,9 +33,27 @@ hints:
     description: "the process requires at least 4G of RAM"
 
 inputs:
+  redwood-path:
+    type: string
+    doc: "Path to storage client"
+    inputBinding:
+      prefix: --redwood-path
+
+  redwood-token:
+    type: string
+    doc: "Token for storage client"
+    inputBinding:
+      prefix: --redwood-token
+
+  redwood-host:
+    type: string
+    doc: "Host for storage client"
+    inputBinding:
+      prefix: --redwood-host
+ 
   json-encoded:
-    type: File
-    doc: "Path to JSON file for container to be run by Dockstore"
+    type: string
+    doc: "Encoded JSON for container to be run by Dockstore"
     inputBinding:
       prefix: --json-encoded
 
@@ -44,6 +62,12 @@ inputs:
     doc: "Path to docker image from which to create container"
     inputBinding:
       prefix: --dockstore-uri
+
+  parent-uuid:
+    type: string
+    doc: "UUID for parent"
+    inputBinding:
+      prefix: --parent-uuid
 
   tmpdir:
     type: string
