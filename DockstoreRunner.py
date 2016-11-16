@@ -1,3 +1,12 @@
+#!/usr/bin/env python 
+""" 
+    author Brian O'Conner 
+    broconno@ucsc.com 
+        
+
+
+"""
+
 import json
 import time
 import re

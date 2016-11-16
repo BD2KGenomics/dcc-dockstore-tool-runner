@@ -10,6 +10,7 @@ USER root
 RUN apt-get update && apt-get install --yes \
     openjdk-8-jre \
     curl \
+    wget \
     python \
     python-pip \
     docker.io \
@@ -70,8 +71,8 @@ COPY Dockstore/ /root/Dockstore
 ENV PATH /root/Dockstore/:$PATH
 ENV HOME /root
 
-COPY dockstore_tool_runner.py /usr/local/bin
-RUN chmod a+x /usr/local/bin/dockstore_tool_runner.py
+COPY DockstoreRunner.py /usr/local/bin
+RUN chmod a+x /usr/local/bin/DockstoreRunner.py
 
 #since we have not figured out how to run as nonroot
 #set the following env var so dockstore does not question
