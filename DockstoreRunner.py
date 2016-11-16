@@ -125,13 +125,11 @@ class DockstoreRunner:
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()
         t_diff = int(t_end - t_start)
-
         # timing information
         utc_datetime = datetime.utcnow()
         print "TIME: "+str(utc_datetime.isoformat("T"))
 
         print "** UPLOAD **"
-
         metadata = '''
 {
    "version" : "1.0.0",
@@ -139,12 +137,16 @@ class DockstoreRunner:
    "parent_uuids" : [
       "%s"
    ],
-   "workflow_bundle_url" : "%s",
-   "workflow_name" : "%s"
+   "workflow_url" : "%s",
+   "workflow_source_url" : "%s",
+   "workflow_name" : "%s",
+   "workflow_version" : "%s",
+   "analysis_type" : "%s",
+   "bundle_uuid" : "%s",
    "workflow_params" : {
-'''
+''' % (<TODO>)
         i=0
-        (params_map, file_map) = self.map_params(transformed_json_path)
+        (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
         while i<len(params_map.keys()):
             metadata += '''"%s": "%s"'''
             if i < len(params_map.keys()) - 1:
@@ -152,107 +154,94 @@ class DockstoreRunner:
             i += 1
         metadata += '''
    },
-   "workflow_outputs" : {
+   "workflow_outputs" : [
    '''
-
         i=0
-        (params_map, file_map) = self.map_params(transformed_json_path)
-        while i<len(params_map.keys()):
-            metadata += '''
-            "%s": "%s"
-
-            '''
-            if i < len(params_map.keys()) - 1:
+        (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
+        while i<len(file_output_map.keys()):
+            metadata += '''{
+              "file_path": "%s",
+              "file_type_label": "%s"
+            }
+            ''' % (<TODO>)
+            if i < len(file_output_map.keys()) - 1:
                 metadata += ","
             i += 1
-
-      "foo.bam.bai" : {
-         "file_type_label" : "bai",
-         "file_type_cv_terms" : [
-            "EDAM:278392"
-         ]
-      },
-      "foo.bam" : {
-         "file_type_label" : "bam",
-         "file_type_cv_terms" : [
-            "EDAM:1293829"
-         ]
-      }
-
-      metadata += '''
-   },
+        metadata += '''
+   ],
    "workflow_inputs" : [
       {
-         "file_storage_bundle_files" : {
-            "foo1.fastq.gz" : {
-               "file_storage_uri" : "ae616ade-3734-4c48-a609-f2b292ecdbc7",
-               "file_type_label" : "fastq",
-               "file_type_cv_terms" : [
-                  "EDAM:123232"
-               ]
-            },
-            "foo2.fastq.gz" : {
-               "file_type_label" : "fastq",
-               "file_type_cv_terms" : [
-                  "EDAM:123232"
-               ],
-               "file_storage_uri" : "9014505b-fa59-4913-a05c-4666c6efe198"
+         "file_storage_bundle_files" : ['''
+        # TODO: problem is this needs to be done per bundle ID and not all together in one loop!
+        i=0
+        (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
+        while i<len(file_input_map.keys()):
+            metadata += '''{
+              "file_path": "%s",
+              "file_type_label": "%s",
+              "file_storage_uri" : "%s"
             }
-         },
-         "file_storage_metadata_json_uri" : "153c380c-0bcb-4ee9-abdf-629db73a62e5",
-         "file_storage_bundle_uri" : "0e99945c-631e-4123-9158-5132a8fe2150"
+            ''' % (<TODO>)
+            if i < len(file_input_map.keys()) - 1:
+                metadata += ","
+            i += 1
+        metadata += '''
+         ],
+         "file_storage_bundle_uri" : "%s"
       }
    ],
-   "workflow_version" : "%s",
    "qc_metrics" : {
    },
    "timing_metrics" : {
       "step_timing" : {
-         "alignment" : {
-            "stop_time_utc" : "Thu Apr 14 24:18:30 UTC 2016",
-            "walltime_seconds" : 60000,
-            "start_time_utc" : "Thu Apr 14 22:18:30 UTC 2016"
+         "download" : {
+            "stop_time_utc" : "%s",
+            "walltime_seconds" : %d,
+            "start_time_utc" : "%s"
+         },
+         "tool_run" : {
+            "stop_time_utc" : "%s",
+            "walltime_seconds" : %d,
+            "start_time_utc" : "%s"
          }
       },
-      '''
-        metadata += '''
       "overall_stop_time_utc" : "%s",
       "overall_start_time_utc" : "%s",
-      "overall_walltime_seconds" : %s
+      "overall_walltime_seconds" : %d
    },
    "host_metrics" : {
-      "vm_instance_type" : "m1.xlarge",
-      "vm_region" : "us-east-1",
-      "vm_instance_cores" : 4,
-      "vm_instance_mem_gb" : 256,
-      "vm_location" : "aws"
+      "vm_instance_type" : "%s",
+      "vm_region" : "%s",
+      "vm_instance_cores" : %d,
+      "vm_instance_mem_gb" : %d,
+      "vm_location" : "%s"
    }
 }
-        '''
+        ''' % (<TODO>)
+        f = open('metadata.json', 'w')
+        print >>f, metadata
+        f.close()
 
+        # now perform the upload
+        cmd = '''
+mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && \
+echo "Register Uploads:" && \
+java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=%s:8444 -DaccessToken=`cat %s/accessToken` -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/%s/upload/%s -o %s/%s/manifest/%s -m manifest.txt && \
+echo "Performing Uploads:" && \
+java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=%s:5431 -DaccessToken=`cat %s/accessToken` -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/%s/manifest/%s/manifest.txt
+        ''' % (<TODO>)
+        print "CMD: "+cmd
+        result = subprocess.call(cmd, shell=True)
+        if result == 0:
+            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
+            print "CLEANUP CMD: "+cmd
+            result = subprocess.call(cmd, shell=True)
+            if result == 0:
+                print "CLEANUP SUCCESSFUL"
+            f = self.output().open('w')
+            print >>f, "uploaded"
+            f.close()
 
-        # TODO: need to iterate over the outputs, prepare upload, perform upload, cleanup
-#        cmd = '''mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && ln -s %s/%s/bamstats_report.zip %s/%s/metadata.json %s/%s/upload/%s && \
-#echo "Register Uploads:" && \
-#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=%s:8444 -DaccessToken=`cat %s/accessToken` -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/%s/upload/%s -o %s/%s/manifest/%s -m manifest.txt && \
-#echo "Performing Uploads:" && \
-#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=%s:5431 -DaccessToken=`cat %s/accessToken` -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/%s/manifest/%s/manifest.txt
-#''' % (self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.data_dir, self.bundle_uuid, self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.ucsc_storage_client_path, self.ucsc_storage_host, self.ucsc_storage_client_path, self.ucsc_storage_client_path, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.tmp_dir, self.bundle_uuid, self.upload_uuid, self.ucsc_storage_client_path, self.ucsc_storage_host, self.ucsc_storage_host, self.ucsc_storage_client_path, self.ucsc_storage_client_path, self.tmp_dir, self.bundle_uuid, self.upload_uuid)
-        #
-#        print "CMD: "+cmd
-#        result = subprocess.call(cmd, shell=True)
-#        if result == 0:
-#            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
-#            print "CLEANUP CMD: "+cmd
-#            result = subprocess.call(cmd, shell=True)
-#            if result == 0:
-#                print "CLEANUP SUCCESSFUL"
-#            f = self.output().open('w')
-#            print >>f, "uploaded"
-#            f.close()
-
-    def output(self):
-        return luigi.LocalTarget(self.tmp_dir+"/"+self.bundle_uuid+"/"+self.filename)
 
 # run the class
 if __name__ == '__main__':
