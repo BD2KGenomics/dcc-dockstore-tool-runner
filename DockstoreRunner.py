@@ -41,7 +41,8 @@ class DockstoreRunner:
 
     def map_params(self, transformed_json_path):
         params_map = {}
-        file_map = {}
+        file_input_map = {}
+        file_output_map = {}
         with open(transformed_json_path) as data_file:
             data = json.load(data_file)
         for key, value in data.iteritems():
@@ -57,7 +58,7 @@ class DockstoreRunner:
                     # can scalars be passed as an array or is it only files?
             else: # then it's a scalar?
                 params_map[key] = value
-        return(params_map, file_map)
+        return(params_map, file_input_map, file_output_map)
 
 
     def convert_to_local_path(self, path):
@@ -122,6 +123,7 @@ class DockstoreRunner:
         # WALT: this is where we need to integration your work
         cmd = "dockstore tool launch --entry "+self.dockstore_uri+" --json "+transformed_json_path
         print cmd
+        # TODO: actually perform this run!!!
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()
         t_diff = int(t_end - t_start)
@@ -156,6 +158,7 @@ class DockstoreRunner:
    },
    "workflow_outputs" : [
    '''
+        # TODO: so I can figure these out via the CWL (if explicit outputs, won't work for arrays) or via the output printed to screen for Dockstore
         i=0
         (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
         while i<len(file_output_map.keys()):
@@ -173,6 +176,8 @@ class DockstoreRunner:
       {
          "file_storage_bundle_files" : ['''
         # TODO: problem is this needs to be done per bundle ID and not all together in one loop!
+        # TODO: will need to work with the original input JSON with redwood URLs so I can get the budle/file IDs properly
+        # TODO: I don't see a way to find out the metadata.json UUID
         i=0
         (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
         while i<len(file_input_map.keys()):
