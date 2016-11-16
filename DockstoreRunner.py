@@ -5,6 +5,7 @@ from datetime import datetime
 import subprocess
 import argparse
 import base64
+import os
 from urllib import urlopen
 from uuid import uuid4
 
@@ -25,8 +26,11 @@ class DockstoreRunner:
         parser.add_argument('--redwood-token', default='token-UUID-dummy-value', required=True)
         parser.add_argument('--redwood-host', default='storage.ucsc-cgl.org', required=True)
         parser.add_argument('--json-encoded', default='e30=', required=True)
-        parser.add_argument('--dockstore-uri', default='quay.io/wshands/fastqc', required=True)
+        parser.add_argument('--docker-uri', default='quay.io/wshands/fastqc:latest', required=True)
+        parser.add_argument('--dockstore-url', default='https://dockstore.org/containers/quay.io/wshands/fastqc', required=True)
+        parser.add_argument('--workflow-type', default='qc', required=True)
         parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', required=True)
+        # FIXME: this append seems to crash on the mac but it would be the way to go if we want multiple parents
         #parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', action='append', required=True)
         # get args
         args = parser.parse_args()
@@ -34,11 +38,26 @@ class DockstoreRunner:
         self.redwood_host = args.redwood_host
         self.redwood_token = args.redwood_token
         self.json_encoded = args.json_encoded
-        self.dockstore_uri = args.dockstore_uri
+        self.docker_uri = args.docker_uri
+        self.dockstore_url = args.dockstore_url
+        self.workflow_name = args.dockstore_uri.split(:)[0]
+        self.workflow_version = args.dockstore_uri.split(:)[1]
+        self.workflow_type = args.workflow_type
         self.parent_uuids = args.parent_uuid
+        self.bundle_uuid = uuid.uuid4()
         # run
         self.run()
 
+    def map_outputs(self):
+        # going to need to read from datastore
+        # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
+        path = 'datastore'
+        files = sorted(os.listdir(path), key=os.path.getmtime)
+        newest = files[-1]
+        path = 'datastore/'+newest+'/outputs/cwltool.stdout.txt'
+        # LEFT OFF WITH: need to parse this JSON file and extract outputs 
+
+    # TODO: this needs to return file_input_map, can drop output map
     def map_params(self, transformed_json_path):
         params_map = {}
         file_input_map = {}
@@ -140,13 +159,12 @@ class DockstoreRunner:
       "%s"
    ],
    "workflow_url" : "%s",
-   "workflow_source_url" : "%s",
    "workflow_name" : "%s",
    "workflow_version" : "%s",
    "analysis_type" : "%s",
    "bundle_uuid" : "%s",
    "workflow_params" : {
-''' % (<TODO>)
+''' % (str(utc_datetime.isoformat("T"), self.parent_uuids, self.dockstore_url, self.workflow_name, self.workflow_version, self.workflow_type, self.bundle_uuid)
         i=0
         (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
         while i<len(params_map.keys()):
@@ -160,7 +178,7 @@ class DockstoreRunner:
    '''
         # TODO: so I can figure these out via the CWL (if explicit outputs, won't work for arrays) or via the output printed to screen for Dockstore
         i=0
-        (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
+        file_output_map = self.map_outputs()
         while i<len(file_output_map.keys()):
             metadata += '''{
               "file_path": "%s",
