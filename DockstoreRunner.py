@@ -242,7 +242,6 @@ java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePasswor
             print >>f, "uploaded"
             f.close()
 
-
 # run the class
 if __name__ == '__main__':
     runner = DockstoreRunner()
