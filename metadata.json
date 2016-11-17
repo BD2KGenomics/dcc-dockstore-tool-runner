@@ -1,0 +1,74 @@
+
+{
+   "version" : "1.0.0",
+   "timestamp" : "2016-11-17T02:35:08.475804",
+   "parent_uuids" : [
+      "id"
+   ],
+   "workflow_url" : "https://dockstore.org/containers/quay.io/wshands/fastqc",
+   "workflow_name" : "quay.io/wshands/fastqc",
+   "workflow_version" : "latest",
+   "analysis_type" : "qc",
+   "bundle_uuid" : "19c605c7-0a83-4d19-9192-b3105c5eeb41",
+   "workflow_params" : {
+
+   },
+   "workflow_outputs" : [
+   {
+              "file_path": "ERR030886_2_fastqc.zip",
+              "file_type": "zip",
+              "file_checksum": "sha1$f57bc5f399b216d159df478b1cecea0a75c3cd10",
+              "file_size": 494406
+            }
+            ,{
+              "file_path": "ERR030886_1_fastqc.zip",
+              "file_type": "zip",
+              "file_checksum": "sha1$27fa7c14318ecd7852ca8ecdf96ca6b83fcd4932",
+              "file_size": 425451
+            }
+            ,{
+              "file_path": "ERR030886_2_fastqc.html",
+              "file_type": "html",
+              "file_checksum": "sha1$6bb71b3f39c66f5e8664003312b274c53e9e2160",
+              "file_size": 391261
+            }
+            ,{
+              "file_path": "ERR030886_1_fastqc.html",
+              "file_type": "html",
+              "file_checksum": "sha1$d8645a7fe676245481971a7592130f34a6492397",
+              "file_size": 349721
+            }
+            
+   ],
+   "workflow_inputs" :
+        [{"file_storage_bundle_files": [{"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_1.fastq.gz", "file_storage_id": "2eadcc65-44af-527c-a1a7-22c3a55d736e"}, {"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_2.fastq.gz", "file_storage_id": "834523f3-7ddf-5086-a173-108060aeee77"}], "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec"}]
+   ,
+
+   "qc_metrics" : {
+   },
+   "timing_metrics" : {
+      "step_timing" : {
+         "download" : {
+            "stop_time_utc" : "2016-11-17T02:35:00.910081",
+            "walltime_seconds" : 7,
+            "start_time_utc" : "2016-11-17T02:35:08.475753"
+         },
+         "tool_run" : {
+            "stop_time_utc" : "2016-11-17T02:35:08.475793",
+            "walltime_seconds" : 0,
+            "start_time_utc" : "2016-11-17T02:35:08.475802"
+         }
+      },
+      "overall_stop_time_utc" : "2016-11-17T02:35:08.475804",
+      "overall_start_time_utc" : "2016-11-17T02:35:00.910081",
+      "overall_walltime_seconds" : 7
+   },
+   "host_metrics" : {
+      "vm_instance_type" : "m1.xlarge",
+      "vm_region" : "oregon",
+      "vm_instance_cores" : 16,
+      "vm_instance_mem_gb" : 256,
+      "vm_location" : "aws"
+   }
+}
+        
