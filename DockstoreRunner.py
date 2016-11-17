@@ -48,14 +48,38 @@ class DockstoreRunner:
         # run
         self.run()
 
+    def fill_in_file_dict(self, file_map, parsed_json):
+        file_map['file_size'] = parsed_json['size']
+        file_map['file_checksum'] = parsed_json['checksum']
+        file_map['file_path'] = parsed_json['basename']
+        extension = parsed_json['basename'].split('.')
+        file_map['file_type'] = extension[-1]
+        # FIXME: hack to deal with a few common types, this is ugly, this is a bad place to include this logic!  Better to have the indexer maintain a mapping table of types I think.
+        if (parsed_json['basename'].endswith('.fastq.gz')):
+            file_map['file_type'] = '.fastq.gz'
+
     def map_outputs(self):
         # going to need to read from datastore
         # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
+        result = []
         path = 'datastore'
         files = sorted(os.listdir(path), key=os.path.getmtime)
         newest = files[-1]
         path = 'datastore/'+newest+'/outputs/cwltool.stdout.txt'
-        # LEFT OFF WITH: need to parse this JSON file and extract outputs 
+        with open(path) as data_file:
+            data = json.load(data_file)
+        for key, value in data.iteritems():
+            print "ITEM: "+key
+            file_map = {}
+            if isinstance(value, dict):
+                if parsed_json[key]['class'] == 'File':
+                    self.fill_in_file_dict(file_map, parsed_json)
+
+            elif isinstance(value, list):
+                for arr_value in parsed_json[key]:
+                    if isinstance (arr_value, dict):
+                        if arr_value['class'] == 'File':
+                            self.fill_in_file_dict(arr_value, parsed_json)
 
     # TODO: this needs to return file_input_map, can drop output map
     def map_params(self, transformed_json_path):
