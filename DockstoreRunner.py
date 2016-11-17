@@ -40,11 +40,11 @@ class DockstoreRunner:
         self.json_encoded = args.json_encoded
         self.docker_uri = args.docker_uri
         self.dockstore_url = args.dockstore_url
-        self.workflow_name = args.dockstore_uri.split(:)[0]
-        self.workflow_version = args.dockstore_uri.split(:)[1]
+        self.workflow_name = args.docker_uri.split(':')[0]
+        self.workflow_version = args.docker_uri.split(':')[1]
         self.workflow_type = args.workflow_type
         self.parent_uuids = args.parent_uuid
-        self.bundle_uuid = uuid.uuid4()
+        self.bundle_uuid = uuid4()
         # run
         self.run()
 
@@ -63,45 +63,101 @@ class DockstoreRunner:
         # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
         result = []
         path = 'datastore'
-        files = sorted(os.listdir(path), key=os.path.getmtime)
+        #files = sorted(os.listdir(path), key=os.path.getmtime)
+        mtime = lambda f: os.stat(os.path.join(path, f)).st_mtime
+        files = list(sorted(os.listdir(path), key=mtime))
         newest = files[-1]
         path = 'datastore/'+newest+'/outputs/cwltool.stdout.txt'
         with open(path) as data_file:
-            data = json.load(data_file)
-        for key, value in data.iteritems():
+            parsed_json = json.load(data_file)
+        for key, value in parsed_json.iteritems():
             print "ITEM: "+key
             file_map = {}
             if isinstance(value, dict):
                 if parsed_json[key]['class'] == 'File':
                     self.fill_in_file_dict(file_map, parsed_json)
-
+                    result.append(file_map)
+                    file_map = {}
             elif isinstance(value, list):
                 for arr_value in parsed_json[key]:
                     if isinstance (arr_value, dict):
                         if arr_value['class'] == 'File':
-                            self.fill_in_file_dict(arr_value, parsed_json)
+                            self.fill_in_file_dict(file_map, arr_value)
+                            result.append(file_map)
+                            file_map = {}
+        print result
+        return(result)
 
-    # TODO: this needs to return file_input_map, can drop output map
+    def map_file_inputs(self, json_encoded):
+        # this is going to be an array of dicts that can then
+        bundle_array = []
+        file_map = {}
+        decoded = base64.urlsafe_b64decode(json_encoded)
+        # this needs to idenitfy anything with redwood:// and transform it to local path. Also need to deal with output paths
+        data = json.loads(decoded)
+        for key, value in data.iteritems():
+            print "ITEM: "+key
+            if isinstance(value, dict):
+                if data[key]['class'] == 'File':
+                    tokens = data[key]['path'].split('/')
+                    file_entry = {}
+                    file_entry['file_name'] = key
+                    file_entry['file_path'] = tokens[-1]
+                    file_entry['file_storage_id'] = tokens[-2]
+                    file_entry['file_storage_bundle_id'] = tokens[-3]
+                    name_tokens = file_entry['file_path'].split('.')
+                    file_entry['file_type'] = name_tokens[-1]
+                    if file_entry['file_path'].endswith('fastq.gz'):
+                        file_entry['file_type'] = 'fastq.gz'
+                    # now add this to an array
+                    if (tokens[-3] not in file_map.keys()):
+                        file_map[tokens[-3]] = []
+                    file_map[tokens[-3]].append(file_entry)
+            elif isinstance(value, list):
+                for arr_value in data[key]:
+                    if isinstance (arr_value, dict):
+                        if arr_value['class'] == 'File':
+                            tokens = arr_value['path'].split('/')
+                            file_entry = {}
+                            file_entry['file_name'] = key
+                            file_entry['file_path'] = tokens[-1]
+                            file_entry['file_storage_id'] = tokens[-2]
+                            file_entry['file_storage_bundle_id'] = tokens[-3]
+                            name_tokens = file_entry['file_path'].split('.')
+                            file_entry['file_type'] = name_tokens[-1]
+                            if file_entry['file_path'].endswith('fastq.gz'):
+                                file_entry['file_type'] = 'fastq.gz'
+                            # now add this to an array
+                            if (tokens[-3] not in file_map.keys()):
+                                file_map[tokens[-3]] = []
+                            file_map[tokens[-3]].append(file_entry)
+        # now loop through file_arr and build
+        for bundle_id in file_map.keys():
+            bundle_hash = {}
+            bundle_hash['file_storage_bundle_files'] = file_map[bundle_id]
+            bundle_hash['file_storage_bundle_id'] = bundle_id
+            bundle_array.append(bundle_hash)
+        return(bundle_array)
+
     def map_params(self, transformed_json_path):
         params_map = {}
-        file_input_map = {}
-        file_output_map = {}
+        file_map = {}
         with open(transformed_json_path) as data_file:
             data = json.load(data_file)
         for key, value in data.iteritems():
             print "ITEM: "+key
             if isinstance(value, dict):
-                if parsed_json[key]['class'] == 'File':
+                if data[key]['class'] == 'File':
                     file_map[key] = True
             elif isinstance(value, list):
-                for arr_value in parsed_json[key]:
+                for arr_value in data[key]:
                     if isinstance (arr_value, dict):
                         if arr_value['class'] == 'File':
                             file_map[key] = True
                     # can scalars be passed as an array or is it only files?
             else: # then it's a scalar?
                 params_map[key] = value
-        return(params_map, file_input_map, file_output_map)
+        return(params_map, file_map)
 
 
     def convert_to_local_path(self, path):
@@ -164,7 +220,7 @@ class DockstoreRunner:
         t_utc_datetime = datetime.utcnow()
         t_start = time.time()
         # WALT: this is where we need to integration your work
-        cmd = "dockstore tool launch --entry "+self.dockstore_uri+" --json "+transformed_json_path
+        cmd = "dockstore tool launch --entry "+self.docker_uri+" --json "+transformed_json_path
         print cmd
         # TODO: actually perform this run!!!
         t_end = time.time()
@@ -173,6 +229,7 @@ class DockstoreRunner:
         # timing information
         utc_datetime = datetime.utcnow()
         print "TIME: "+str(utc_datetime.isoformat("T"))
+        o_diff = int(t_end - d_start)
 
         print "** UPLOAD **"
         metadata = '''
@@ -188,9 +245,9 @@ class DockstoreRunner:
    "analysis_type" : "%s",
    "bundle_uuid" : "%s",
    "workflow_params" : {
-''' % (str(utc_datetime.isoformat("T"), self.parent_uuids, self.dockstore_url, self.workflow_name, self.workflow_version, self.workflow_type, self.bundle_uuid)
+''' % (str(utc_datetime.isoformat("T")), self.parent_uuids, self.dockstore_url, self.workflow_name, self.workflow_version, self.workflow_type, self.bundle_uuid)
         i=0
-        (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
+        (params_map, file_input_map) = self.map_params(transformed_json_path)
         while i<len(params_map.keys()):
             metadata += '''"%s": "%s"'''
             if i < len(params_map.keys()) - 1:
@@ -203,41 +260,24 @@ class DockstoreRunner:
         # TODO: so I can figure these out via the CWL (if explicit outputs, won't work for arrays) or via the output printed to screen for Dockstore
         i=0
         file_output_map = self.map_outputs()
-        while i<len(file_output_map.keys()):
+        while i<len(file_output_map):
             metadata += '''{
               "file_path": "%s",
-              "file_type_label": "%s"
+              "file_type": "%s",
+              "file_checksum": "%s",
+              "file_size": %d
             }
-            ''' % (<TODO>)
-            if i < len(file_output_map.keys()) - 1:
+            ''' % (file_output_map[i]['file_path'], file_output_map[i]['file_type'], file_output_map[i]['file_checksum'], file_output_map[i]['file_size'])
+            if i < len(file_output_map) - 1:
                 metadata += ","
             i += 1
         metadata += '''
    ],
-   "workflow_inputs" : [
-      {
-         "file_storage_bundle_files" : ['''
-        # TODO: problem is this needs to be done per bundle ID and not all together in one loop!
-        # TODO: will need to work with the original input JSON with redwood URLs so I can get the budle/file IDs properly
-        # TODO: I don't see a way to find out the metadata.json UUID
-        i=0
-        # LEFT OFF HERE: need to create a map for output files (from stdout of cwltools) and input files (from original JSON with redwood URLs)
-        (params_map, file_input_map, file_output_map) = self.map_params(transformed_json_path)
-        while i<len(file_input_map.keys()):
-            metadata += '''{
-              "file_path": "%s",
-              "file_type_label": "%s",
-              "file_storage_uri" : "%s"
-            }
-            ''' % (<TODO>)
-            if i < len(file_input_map.keys()) - 1:
-                metadata += ","
-            i += 1
+   "workflow_inputs" :
+        %s
+   ,
+''' % (json.dumps(self.map_file_inputs(self.json_encoded)))
         metadata += '''
-         ],
-         "file_storage_bundle_uri" : "%s"
-      }
-   ],
    "qc_metrics" : {
    },
    "timing_metrics" : {
@@ -265,30 +305,30 @@ class DockstoreRunner:
       "vm_location" : "%s"
    }
 }
-        ''' % (<TODO>)
+        ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, 'm1.xlarge', 'oregon', 16, 256, 'aws')
         f = open('metadata.json', 'w')
         print >>f, metadata
         f.close()
 
         # now perform the upload
-        cmd = '''
-mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && \
-echo "Register Uploads:" && \
-java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=%s:8444 -DaccessToken=`cat %s/accessToken` -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/%s/upload/%s -o %s/%s/manifest/%s -m manifest.txt && \
-echo "Performing Uploads:" && \
-java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=%s:5431 -DaccessToken=`cat %s/accessToken` -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/%s/manifest/%s/manifest.txt
-        ''' % (<TODO>)
-        print "CMD: "+cmd
-        result = subprocess.call(cmd, shell=True)
-        if result == 0:
-            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
-            print "CLEANUP CMD: "+cmd
-            result = subprocess.call(cmd, shell=True)
-            if result == 0:
-                print "CLEANUP SUCCESSFUL"
-            f = self.output().open('w')
-            print >>f, "uploaded"
-            f.close()
+        #cmd = '''
+#mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && \
+#echo "Register Uploads:" && \
+#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=%s:8444 -DaccessToken=`cat %s/accessToken` -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/%s/upload/%s -o %s/%s/manifest/%s -m manifest.txt && \
+#echo "Performing Uploads:" && \
+#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=%s:5431 -DaccessToken=`cat %s/accessToken` -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/%s/manifest/%s/manifest.txt
+#        ''' % (<TODO>)
+        #print "CMD: "+cmd
+#        result = subprocess.call(cmd, shell=True)
+#        if result == 0:
+#            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
+#            print "CLEANUP CMD: "+cmd
+#            result = subprocess.call(cmd, shell=True)
+#            if result == 0:
+#                print "CLEANUP SUCCESSFUL"
+#            f = self.output().open('w')
+#            print >>f, "uploaded"
+#            f.close()
 
 # run the class
 if __name__ == '__main__':
