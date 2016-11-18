@@ -17,6 +17,7 @@ from uuid import uuid4
 # * input_bundle_uuids
 # * input_file_uuids
 # * host VM type, cloud, region
+# * I need better code for determining the output path used for downloads...e.g. don't just use tmp
 
 class DockstoreRunner:
 
@@ -48,6 +49,7 @@ class DockstoreRunner:
         # run
         self.run()
 
+    ''' output files filled into a dict '''
     def fill_in_file_dict(self, file_map, parsed_json):
         file_map['file_size'] = parsed_json['size']
         file_map['file_checksum'] = parsed_json['checksum']
@@ -58,6 +60,7 @@ class DockstoreRunner:
         if (parsed_json['basename'].endswith('.fastq.gz')):
             file_map['file_type'] = '.fastq.gz'
 
+    ''' Make a dict for output files '''
     def map_outputs(self):
         # going to need to read from datastore
         # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
@@ -88,6 +91,7 @@ class DockstoreRunner:
         print result
         return(result)
 
+    ''' make a dict of input files '''
     def map_file_inputs(self, json_encoded):
         # this is going to be an array of dicts that can then
         bundle_array = []
@@ -139,6 +143,7 @@ class DockstoreRunner:
             bundle_array.append(bundle_hash)
         return(bundle_array)
 
+    ''' make a dict of params '''
     def map_params(self, transformed_json_path):
         params_map = {}
         file_map = {}
@@ -159,7 +164,7 @@ class DockstoreRunner:
                 params_map[key] = value
         return(params_map, file_map)
 
-
+    ''' return a local path from a redwood URL '''
     def convert_to_local_path(self, path):
         uri_pieces = path.split("/")
         bundle_uuid = uri_pieces[3]
@@ -168,6 +173,7 @@ class DockstoreRunner:
         print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
         return("./tmp/"+bundle_uuid+"/"+file_path)
 
+    ''' downloads the files referenced and makes a new JSON with their paths '''
     def download_and_transform_json(self, json_encoded):
         decoded = base64.urlsafe_b64decode(json_encoded)
         # this needs to idenitfy anything with redwood:// and transform it to local path. Also need to deal with output paths
@@ -205,6 +211,7 @@ class DockstoreRunner:
             print "DOWNLOAD RESULT: "+str(result)
         return('updated_sample.json')
 
+    ''' Kick off main analysis '''
     def run(self):
         print "** DOWNLOAD **"
         d_utc_datetime = datetime.utcnow()
