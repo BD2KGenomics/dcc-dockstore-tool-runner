@@ -1,6 +1,6 @@
 --- job.py	2016-11-15 00:55:42.333183464 +0000
-+++ job_new.py	2016-11-15 22:05:33.879862963 +0000
-@@ -96,6 +96,19 @@
++++ job_new.py	2016-11-18 06:08:36.829832125 +0000
+@@ -96,6 +96,20 @@
  
          if img_id:
              runtime = ["docker", "run", "-i"]
@@ -16,11 +16,12 @@
 +            #that exists on the host. 
 +            #This is set by using the env variable TMPDIR on the host  
 +            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.outdir)), os.path.normpath(os.path.dirname(self.outdir))))
++            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.tmpdir)), os.path.normpath(os.path.dirname(self.tmpdir))))
 + 
              for src in self.pathmapper.files():
                  vol = self.pathmapper.mapper(src)
                  if vol.type == "File":
-@@ -105,9 +118,23 @@
+@@ -105,9 +119,23 @@
                      with open(createtmp, "w") as f:
                          f.write(vol.resolved.encode("utf-8"))
                      runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
@@ -42,8 +43,18 @@
 +            #are staged there. This way the container called from this container can find them
 +            #and we can be sure there is plenty of storage space for them
 +            #This is set by using the env variable TMPDIR on the host  
-+            runtime.append(u"--workdir=%s" % (os.path.normpath(os.path.dirname(self.tmpdir))))
++            runtime.append(u"--workdir=%s" % (os.path.normpath(os.path.dirname(self.outdir))))
 +#            runtime.append(u"--workdir=%s" % ("/var/spool/cwl"))
              runtime.append("--read-only=true")
              if (kwargs.get("enable_net", None) is None and
                      kwargs.get("custom_net", None) is not None):
+@@ -124,7 +152,8 @@
+             if rm_container:
+                 runtime.append("--rm")
+ 
+-            runtime.append("--env=TMPDIR=/tmp")
++            runtime.append("--env=TMPDIR=" + os.path.normpath(os.path.dirname(self.tmpdir)))
++#            runtime.append("--env=TMPDIR=/tmp")
+ 
+             # spec currently says "HOME must be set to the designated output
+             # directory." but spec might change to designated temp directory.
