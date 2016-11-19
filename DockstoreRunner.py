@@ -104,7 +104,7 @@ class DockstoreRunner:
         data = json.loads(decoded)
         for key, value in data.iteritems():
             print "ITEM: "+key
-            if self.known_inputs[key]:
+            if key in self.known_inputs:
                 if isinstance(value, dict):
                     if data[key]['class'] == 'File':
                         tokens = data[key]['path'].split('/')
