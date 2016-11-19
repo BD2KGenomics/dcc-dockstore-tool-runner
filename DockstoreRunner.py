@@ -179,7 +179,7 @@ class DockstoreRunner:
         else: # it's a local path, reform to use our upload directory
             uri_pieces = path.split("/")
             file_path = uri_pieces[-1]
-            return(self.tmp_dir+"/upload/"+self.bundle_uuid+"/"+file_path)
+            return(self.tmp_dir+"/upload/"+str(self.bundle_uuid)+"/"+file_path)
 
     ''' downloads the files referenced and makes a new JSON with their paths '''
     def download_and_transform_json(self, json_encoded):
@@ -329,7 +329,7 @@ class DockstoreRunner:
 }
         ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, 'm4.4xlarge', 'us-west-2', 16, 64, 'aws')
         # FIXME: hardcoded instance information
-        f = open(self.tmp_dir+'/upload/'+self.bundle_uuid+'/metadata.json', 'w')
+        f = open(self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json', 'w')
         print >>f, metadata
         f.close()
 
