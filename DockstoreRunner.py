@@ -46,7 +46,7 @@ class DockstoreRunner:
         self.workflow_type = args.workflow_type
         self.parent_uuids = args.parent_uuid
         self.bundle_uuid = uuid4()
-        self.tmp_dir = './datastore-tool-launcher/tool-launcher-'+self.bundle_uuid
+        self.tmp_dir = './datastore-tool-launcher/tool-launcher-'+str(self.bundle_uuid)
         # run
         self.run()
 
