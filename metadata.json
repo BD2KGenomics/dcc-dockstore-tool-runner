@@ -1,7 +1,7 @@
 
 {
    "version" : "1.0.0",
-   "timestamp" : "2016-11-17T02:35:08.475804",
+   "timestamp" : "2016-11-19T06:01:00.549378",
    "parent_uuids" : [
       "id"
    ],
@@ -9,7 +9,7 @@
    "workflow_name" : "quay.io/wshands/fastqc",
    "workflow_version" : "latest",
    "analysis_type" : "qc",
-   "bundle_uuid" : "19c605c7-0a83-4d19-9192-b3105c5eeb41",
+   "bundle_uuid" : "3e0d390f-40ca-4c2b-b789-5594042d5fd1",
    "workflow_params" : {
 
    },
@@ -41,7 +41,7 @@
             
    ],
    "workflow_inputs" :
-        [{"file_storage_bundle_files": [{"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_1.fastq.gz", "file_storage_id": "2eadcc65-44af-527c-a1a7-22c3a55d736e"}, {"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_2.fastq.gz", "file_storage_id": "834523f3-7ddf-5086-a173-108060aeee77"}], "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec"}]
+        [{"file_storage_bundle_files": [{"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_1.fastq.gz", "file_storage_id": "2eadcc65-44af-527c-a1a7-22c3a55d736e"}, {"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_2.fastq.gz", "file_storage_id": "834523f3-7ddf-5086-a173-108060aeee77"}], "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec"}, {"file_storage_bundle_files": [{"file_type": "zip", "file_name": "zipped_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_2_fastqc.zip", "file_storage_id": "tmp"}, {"file_type": "zip", "file_name": "zipped_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_1_fastqc.zip", "file_storage_id": "tmp"}, {"file_type": "html", "file_name": "report_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_2_fastqc.html", "file_storage_id": "tmp"}, {"file_type": "html", "file_name": "report_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_1_fastqc.html", "file_storage_id": "tmp"}], "file_storage_bundle_id": "."}]
    ,
 
    "qc_metrics" : {
@@ -49,25 +49,25 @@
    "timing_metrics" : {
       "step_timing" : {
          "download" : {
-            "stop_time_utc" : "2016-11-17T02:35:00.910081",
-            "walltime_seconds" : 7,
-            "start_time_utc" : "2016-11-17T02:35:08.475753"
+            "stop_time_utc" : "2016-11-19T06:00:52.477083",
+            "walltime_seconds" : 8,
+            "start_time_utc" : "2016-11-19T06:01:00.549311"
          },
          "tool_run" : {
-            "stop_time_utc" : "2016-11-17T02:35:08.475793",
+            "stop_time_utc" : "2016-11-19T06:01:00.549366",
             "walltime_seconds" : 0,
-            "start_time_utc" : "2016-11-17T02:35:08.475802"
+            "start_time_utc" : "2016-11-19T06:01:00.549376"
          }
       },
-      "overall_stop_time_utc" : "2016-11-17T02:35:08.475804",
-      "overall_start_time_utc" : "2016-11-17T02:35:00.910081",
-      "overall_walltime_seconds" : 7
+      "overall_stop_time_utc" : "2016-11-19T06:01:00.549378",
+      "overall_start_time_utc" : "2016-11-19T06:00:52.477083",
+      "overall_walltime_seconds" : 8
    },
    "host_metrics" : {
-      "vm_instance_type" : "m1.xlarge",
-      "vm_region" : "oregon",
+      "vm_instance_type" : "m4.4xlarge",
+      "vm_region" : "us-west-2",
       "vm_instance_cores" : 16,
-      "vm_instance_mem_gb" : 256,
+      "vm_instance_mem_gb" : 64,
       "vm_location" : "aws"
    }
 }

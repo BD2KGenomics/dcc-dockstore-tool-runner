@@ -70,6 +70,7 @@ class DockstoreRunner:
         mtime = lambda f: os.stat(os.path.join(path, f)).st_mtime
         files = list(sorted(os.listdir(path), key=mtime))
         newest = files[-1]
+        self.working_dir = 'datastore/'+newest
         path = 'datastore/'+newest+'/outputs/cwltool.stdout.txt'
         with open(path) as data_file:
             parsed_json = json.load(data_file)
@@ -166,12 +167,15 @@ class DockstoreRunner:
 
     ''' return a local path from a redwood URL '''
     def convert_to_local_path(self, path):
-        uri_pieces = path.split("/")
-        bundle_uuid = uri_pieces[3]
-        file_uuid = uri_pieces[4]
-        file_path = uri_pieces[5]
-        print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
-        return("./tmp/"+bundle_uuid+"/"+file_path)
+        if path.startswith('redwood://'):
+            uri_pieces = path.split("/")
+            bundle_uuid = uri_pieces[3]
+            file_uuid = uri_pieces[4]
+            file_path = uri_pieces[5]
+            print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
+            return("./tmp/"+bundle_uuid+"/"+file_path)
+        else:
+            return(path)
 
     ''' downloads the files referenced and makes a new JSON with their paths '''
     def download_and_transform_json(self, json_encoded):
@@ -200,15 +204,16 @@ class DockstoreRunner:
         f.close()
         # now download each
         for curr_redwood_url in map_of_redwood_to_local.keys():
-            print "URL: "+curr_redwood_url
-            uri_pieces = curr_redwood_url.split("/")
-            bundle_uuid = uri_pieces[3]
-            file_uuid = uri_pieces[4]
-            file_path = uri_pieces[5]
-            cmd = "mkdir -p ./tmp && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir ./tmp/ --object-id "+file_uuid+" --output-layout bundle"
-            print cmd
-            result = subprocess.call(cmd, shell=True)
-            print "DOWNLOAD RESULT: "+str(result)
+            if curr_redwood_url.startswith("redwood://"):
+                print "URL: "+curr_redwood_url
+                uri_pieces = curr_redwood_url.split("/")
+                bundle_uuid = uri_pieces[3]
+                file_uuid = uri_pieces[4]
+                file_path = uri_pieces[5]
+                cmd = "mkdir -p ./tmp && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir ./tmp/ --object-id "+file_uuid+" --output-layout bundle"
+                print cmd
+                result = subprocess.call(cmd, shell=True)
+                print "DOWNLOAD RESULT: "+str(result)
         return('updated_sample.json')
 
     ''' Kick off main analysis '''
@@ -312,20 +317,21 @@ class DockstoreRunner:
       "vm_location" : "%s"
    }
 }
-        ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, 'm1.xlarge', 'oregon', 16, 256, 'aws')
+        ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, 'm4.4xlarge', 'us-west-2', 16, 64, 'aws')
+        # FIXME: hardcoded instance information
         f = open('metadata.json', 'w')
         print >>f, metadata
         f.close()
 
         # now perform the upload
-        #cmd = '''
-#mkdir -p %s/%s/upload/%s %s/%s/manifest/%s && \
-#echo "Register Uploads:" && \
-#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=%s:8444 -DaccessToken=`cat %s/accessToken` -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/%s/upload/%s -o %s/%s/manifest/%s -m manifest.txt && \
-#echo "Performing Uploads:" && \
-#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=%s:5431 -DaccessToken=`cat %s/accessToken` -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/%s/manifest/%s/manifest.txt
-#        ''' % (<TODO>)
-        #print "CMD: "+cmd
+        cmd = '''
+mkdir -p %s/upload %s/manifest && \
+echo "Register Uploads:" && \
+java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload -o %s/manifest -m manifest.txt && \
+echo "Performing Uploads:" && \
+java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt
+#        ''' % (self.working_dir, self.working_dir, self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.working_dir, self.working_dir, self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.working_dir)
+        print "CMD: "+cmd
 #        result = subprocess.call(cmd, shell=True)
 #        if result == 0:
 #            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
