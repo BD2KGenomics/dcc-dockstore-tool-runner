@@ -46,7 +46,7 @@ class DockstoreRunner:
         self.workflow_type = args.workflow_type
         self.parent_uuids = args.parent_uuid
         self.bundle_uuid = uuid4()
-        self.tmp_dir = './datastore-tool-launcher/tool-launcher-'+str(self.bundle_uuid)
+        self.tmp_dir = './datastore-tool-launcher'
         os.makedirs(self.tmp_dir)
         os.makedirs(self.tmp_dir+"/upload/"+str(self.bundle_uuid))
         # run
