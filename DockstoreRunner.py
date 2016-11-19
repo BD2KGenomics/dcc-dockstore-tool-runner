@@ -47,6 +47,7 @@ class DockstoreRunner:
         self.parent_uuids = args.parent_uuid
         self.bundle_uuid = uuid4()
         self.tmp_dir = './datastore-tool-launcher/tool-launcher-'+str(self.bundle_uuid)
+        os.makedirs(self.tmp_dir)
         # run
         self.run()
 
