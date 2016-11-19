@@ -349,8 +349,10 @@ echo "Performing Uploads:" && \
 java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt
 #        ''' % (self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
         print "CMD: "+cmd
-#        result = subprocess.call(cmd, shell=True)
-#        if result == 0:
+        result = subprocess.call(cmd, shell=True)
+        if result != 0:
+            print "ERRORS UPLOADING!!"
+#        else:
 #            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
 #            print "CLEANUP CMD: "+cmd
 #            result = subprocess.call(cmd, shell=True)
