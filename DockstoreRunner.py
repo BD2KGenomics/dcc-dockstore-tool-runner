@@ -46,6 +46,7 @@ class DockstoreRunner:
         self.workflow_type = args.workflow_type
         self.parent_uuids = args.parent_uuid
         self.bundle_uuid = uuid4()
+        self.tmp_dir = './datastore-tool-launcher/tool-launcher-'+self.bundle_uuid
         # run
         self.run()
 
@@ -102,40 +103,41 @@ class DockstoreRunner:
         data = json.loads(decoded)
         for key, value in data.iteritems():
             print "ITEM: "+key
-            if isinstance(value, dict):
-                if data[key]['class'] == 'File':
-                    tokens = data[key]['path'].split('/')
-                    file_entry = {}
-                    file_entry['file_name'] = key
-                    file_entry['file_path'] = tokens[-1]
-                    file_entry['file_storage_id'] = tokens[-2]
-                    file_entry['file_storage_bundle_id'] = tokens[-3]
-                    name_tokens = file_entry['file_path'].split('.')
-                    file_entry['file_type'] = name_tokens[-1]
-                    if file_entry['file_path'].endswith('fastq.gz'):
-                        file_entry['file_type'] = 'fastq.gz'
-                    # now add this to an array
-                    if (tokens[-3] not in file_map.keys()):
-                        file_map[tokens[-3]] = []
-                    file_map[tokens[-3]].append(file_entry)
-            elif isinstance(value, list):
-                for arr_value in data[key]:
-                    if isinstance (arr_value, dict):
-                        if arr_value['class'] == 'File':
-                            tokens = arr_value['path'].split('/')
-                            file_entry = {}
-                            file_entry['file_name'] = key
-                            file_entry['file_path'] = tokens[-1]
-                            file_entry['file_storage_id'] = tokens[-2]
-                            file_entry['file_storage_bundle_id'] = tokens[-3]
-                            name_tokens = file_entry['file_path'].split('.')
-                            file_entry['file_type'] = name_tokens[-1]
-                            if file_entry['file_path'].endswith('fastq.gz'):
-                                file_entry['file_type'] = 'fastq.gz'
-                            # now add this to an array
-                            if (tokens[-3] not in file_map.keys()):
-                                file_map[tokens[-3]] = []
-                            file_map[tokens[-3]].append(file_entry)
+            if self.known_inputs[key]:
+                if isinstance(value, dict):
+                    if data[key]['class'] == 'File':
+                        tokens = data[key]['path'].split('/')
+                        file_entry = {}
+                        file_entry['file_name'] = key
+                        file_entry['file_path'] = tokens[-1]
+                        file_entry['file_storage_id'] = tokens[-2]
+                        file_entry['file_storage_bundle_id'] = tokens[-3]
+                        name_tokens = file_entry['file_path'].split('.')
+                        file_entry['file_type'] = name_tokens[-1]
+                        if file_entry['file_path'].endswith('fastq.gz'):
+                            file_entry['file_type'] = 'fastq.gz'
+                        # now add this to an array
+                        if (tokens[-3] not in file_map.keys()):
+                            file_map[tokens[-3]] = []
+                        file_map[tokens[-3]].append(file_entry)
+                elif isinstance(value, list):
+                    for arr_value in data[key]:
+                        if isinstance (arr_value, dict):
+                            if arr_value['class'] == 'File':
+                                tokens = arr_value['path'].split('/')
+                                file_entry = {}
+                                file_entry['file_name'] = key
+                                file_entry['file_path'] = tokens[-1]
+                                file_entry['file_storage_id'] = tokens[-2]
+                                file_entry['file_storage_bundle_id'] = tokens[-3]
+                                name_tokens = file_entry['file_path'].split('.')
+                                file_entry['file_type'] = name_tokens[-1]
+                                if file_entry['file_path'].endswith('fastq.gz'):
+                                    file_entry['file_type'] = 'fastq.gz'
+                                # now add this to an array
+                                if (tokens[-3] not in file_map.keys()):
+                                    file_map[tokens[-3]] = []
+                                file_map[tokens[-3]].append(file_entry)
         # now loop through file_arr and build
         for bundle_id in file_map.keys():
             bundle_hash = {}
@@ -173,9 +175,11 @@ class DockstoreRunner:
             file_uuid = uri_pieces[4]
             file_path = uri_pieces[5]
             print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
-            return("./tmp/"+bundle_uuid+"/"+file_path)
-        else:
-            return(path)
+            return(self.tmp_dir"/"+bundle_uuid+"/"+file_path)
+        else: # it's a local path, reform to use our upload directory
+            uri_pieces = path.split("/")
+            file_path = uri_pieces[-1]
+            return(self.tmp_dir"/upload/"+bundle_uuid+"/"+file_path)
 
     ''' downloads the files referenced and makes a new JSON with their paths '''
     def download_and_transform_json(self, json_encoded):
@@ -184,12 +188,16 @@ class DockstoreRunner:
         parsed_json = json.loads(decoded)
         print "PARSED JSON: "+decoded
         map_of_redwood_to_local = {}
+        # need to track what are inputs, since all inputs are files from redwood they are easy to flag
+        self.known_inputs = {}
         for key, value in parsed_json.iteritems():
             print "ITEM: "+key
             if isinstance(value, dict):
                 if parsed_json[key]['class'] == 'File':
                     path = parsed_json[key]['path']
                     print "PATH: "+path
+                    if path.startswith("redwood://"):
+                        self.known_inputs[key] = True
                     map_of_redwood_to_local[path] = self.convert_to_local_path(path)
                     parsed_json[key]['path'] = map_of_redwood_to_local[path]
             else: # then assuming it's an array!
@@ -197,9 +205,11 @@ class DockstoreRunner:
                     if arr_value['class'] == 'File':
                         path = arr_value['path']
                         print "PATH: "+path
+                        if path.startswith("redwood://"):
+                            self.known_inputs[key] = True
                         map_of_redwood_to_local[path] = self.convert_to_local_path(path)
                         arr_value['path'] = map_of_redwood_to_local[path]
-        f = open('updated_sample.json', 'w')
+        f = open(self.tmp_dir+'/updated_sample.json', 'w')
         print >>f, json.dumps(parsed_json)
         f.close()
         # now download each
@@ -210,11 +220,11 @@ class DockstoreRunner:
                 bundle_uuid = uri_pieces[3]
                 file_uuid = uri_pieces[4]
                 file_path = uri_pieces[5]
-                cmd = "mkdir -p ./tmp && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir ./tmp/ --object-id "+file_uuid+" --output-layout bundle"
+                cmd = "mkdir -p "+self.tmp_dir+" && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
                 print cmd
                 result = subprocess.call(cmd, shell=True)
                 print "DOWNLOAD RESULT: "+str(result)
-        return('updated_sample.json')
+        return(self.tmp_dir+'/updated_sample.json')
 
     ''' Kick off main analysis '''
     def run(self):
@@ -319,18 +329,18 @@ class DockstoreRunner:
 }
         ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, 'm4.4xlarge', 'us-west-2', 16, 64, 'aws')
         # FIXME: hardcoded instance information
-        f = open('metadata.json', 'w')
+        f = open(self.tmp_dir+'/upload/'+self.bundle_uuid+'/metadata.json', 'w')
         print >>f, metadata
         f.close()
 
         # now perform the upload
         cmd = '''
-mkdir -p %s/upload %s/manifest && \
+mkdir -p %s/upload/%s %s/manifest && \
 echo "Register Uploads:" && \
-java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload -o %s/manifest -m manifest.txt && \
+java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload/%s -o %s/manifest -m manifest.txt && \
 echo "Performing Uploads:" && \
 java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt
-#        ''' % (self.working_dir, self.working_dir, self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.working_dir, self.working_dir, self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.working_dir)
+#        ''' % (self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
         print "CMD: "+cmd
 #        result = subprocess.call(cmd, shell=True)
 #        if result == 0:
