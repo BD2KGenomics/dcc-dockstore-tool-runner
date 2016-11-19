@@ -247,10 +247,10 @@ class DockstoreRunner:
         cmd = "dockstore tool launch --entry "+self.docker_uri+" --json "+transformed_json_path
         print cmd
         result = subprocess.call(cmd, shell=True)
-            if result != 0:
-                print "ERRORS running dockstore CMD!!!"
-            else:
-                print "DOCKSTORE CMD SUCCESSFUL!!"
+        if result != 0:
+            print "ERRORS running dockstore CMD!!!"
+        else:
+            print "DOCKSTORE CMD SUCCESSFUL!!"
         # TODO: actually perform this run!!!
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()
