@@ -58,6 +58,10 @@ This encoded string corresponds to the contents of `sample.json`.
 
 ## Via Dockstore
 
+Sample:
+
+    dockstore tool launch --entry quay.io/wshands/fastqc:latest --json updated_sample.json
+
 ## Known Issues
 
     AttributeError: 'str' object has no attribute 'append'
