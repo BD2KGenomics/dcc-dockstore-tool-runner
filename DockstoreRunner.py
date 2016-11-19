@@ -179,7 +179,7 @@ class DockstoreRunner:
         else: # it's a local path, reform to use our upload directory
             uri_pieces = path.split("/")
             file_path = uri_pieces[-1]
-            return(self.tmp_dir+"/upload/"+bundle_uuid+"/"+file_path)
+            return(self.tmp_dir+"/upload/"+self.bundle_uuid+"/"+file_path)
 
     ''' downloads the files referenced and makes a new JSON with their paths '''
     def download_and_transform_json(self, json_encoded):
