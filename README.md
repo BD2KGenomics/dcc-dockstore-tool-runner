@@ -64,6 +64,8 @@ The command below will download samples from Redwood, run fastqc from Dockstore 
 
 This encoded string corresponds to the contents of `sample.json`.
 
+To encode and decode online see: https://www.base64encode.org/
+
 ## Via Docker
 
 ## Via Dockstore
