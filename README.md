@@ -73,10 +73,14 @@ Build the docker image:
     # make a tmpdir like /datastore
     docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 .
     # fill in your JSON from Dockstore.json template as Dockstore.my.json
+    mkdir /datastore; chown ubuntu:ubuntu /datastore/ 
     # local execution
-    dockstore tool launch --entry Dockstore.cwl --local-entry --json Dockstore.my.json
+    TMPDIR=/datastore dockstore tool launch --entry Dockstore.cwl --local-entry --json Dockstore.my.json
     # execute published on dockstore
     dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 --json Dockstore.my.json
+
+    # running you see it launch
+    cwltool --enable-dev --non-strict --enable-net --outdir /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/outputs/ --tmpdir-prefix /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/working/ /home/ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/workflow_params.json
 
 ## Via cwltool
 NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPACE TO HOLD INPUT, OUTPUT AND INTERMEDIATE FILES. Otherwise cwltool will use /VAR/SPOOL/CWL by default which may not have enough space.
