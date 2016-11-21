@@ -77,6 +77,7 @@ Build the docker image:
     mkdir /datastore; chown ubuntu:ubuntu /datastore/
     # local execution
     TMPDIR=/datastore dockstore tool launch --entry Dockstore.cwl --local-entry --json Dockstore.my.json
+    # as root in /datastore 
     TMPDIR=/datastore dockstore tool launch --entry ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl --local-entry --json ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.my.json
     # execute published on dockstore
     dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 --json Dockstore.my.json
