@@ -112,4 +112,4 @@ outputs:
        glob: metadata.json
     doc: "Result metadata.json files from tool run on the host"
 
-baseCommand: ["python", "DockstoreRunner.py"]
+baseCommand: ["python", "/usr/local/bin/DockstoreRunner.py"]

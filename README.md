@@ -71,6 +71,11 @@ To encode and decode online see: https://www.base64encode.org/
 Build the docker image:
 
      docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 .
+     # fill in your JSON from Dockstore.json template as Dockstore.my.json
+     # local execution
+     dockstore tool launch --entry Dockstore.cwl --local-entry --json Dockstore.my.json
+     # execute published on dockstore
+     dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 --json Dockstore.my.json
 
 ## Via cwltool
 NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPACE TO HOLD INPUT, OUTPUT AND INTERMEDIATE FILES. Otherwise cwltool will use /VAR/SPOOL/CWL by default which may not have enough space.
