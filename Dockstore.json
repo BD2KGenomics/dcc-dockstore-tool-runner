@@ -1,16 +1,16 @@
 {
-  "redwood-path": "<path/to/ucsc-storage-client>",
-
-  "redwood-token": "<storage service token>",
-
-  "redwood-host": "storage2.ucsc-cgl.org",
-
-  "json-encoded": "ew0KCSJmYXN0cV9maWxlIjogWw0KDQoJCXsNCgkJCSJjbGFzcyI6ICJGaWxlIiwNCgkJCSJwYXRoIjogInJlZHdvb2Q6Ly9zdG9yYWdlMi51Y3NjLWNnbC5vcmcvOGViZGIwM2EtM2M5OS01ZjMyLTgxMWMtOWQ3NGI4ODE1MWVjLzJlYWRjYzY1LTQ0YWYtNTI3Yy1hMWE3LTIyYzNhNTVkNzM2ZS9FUlIwMzA4ODZfMS5mYXN0cS5neiINCgkJfSwgew0KCQkJImNsYXNzIjogIkZpbGUiLA0KCQkJInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UyLnVjc2MtY2dsLm9yZy84ZWJkYjAzYS0zYzk5LTVmMzItODExYy05ZDc0Yjg4MTUxZWMvODM0NTIzZjMtN2RkZi01MDg2LWExNzMtMTA4MDYwYWVlZTc3L0VSUjAzMDg4Nl8yLmZhc3RxLmd6Ig0KCQl9DQoJXQ0KfQ==",
-
-  "dockstore-uri": "quay.io/wshands/fastqc",
-   
-  "parent-uuid": "<parent uuid>",
-
-  "tmpdir": "<path in $TMPDIR env var>"
-}   
-    
+  "redwood_token": "<storage service token>",
+  "redwood_host": "storage2.ucsc-cgl.org",
+  "json_encoded": "ew0KCSJmYXN0cV9maWxlIjogW3sNCgkJImNsYXNzIjogIkZpbGUiLA0KCQkicGF0aCI6ICJyZWR3b29kOi8vc3RvcmFnZTIudWNzYy1jZ2wub3JnLzhlYmRiMDNhLTNjOTktNWYzMi04MTFjLTlkNzRiODgxNTFlYy8yZWFkY2M2NS00NGFmLTUyN2MtYTFhNy0yMmMzYTU1ZDczNmUvRVJSMDMwODg2XzEuZmFzdHEuZ3oiDQoJfSwgew0KCQkiY2xhc3MiOiAiRmlsZSIsDQoJCSJwYXRoIjogInJlZHdvb2Q6Ly9zdG9yYWdlMi51Y3NjLWNnbC5vcmcvOGViZGIwM2EtM2M5OS01ZjMyLTgxMWMtOWQ3NGI4ODE1MWVjLzgzNDUyM2YzLTdkZGYtNTA4Ni1hMTczLTEwODA2MGFlZWU3Ny9FUlIwMzA4ODZfMi5mYXN0cS5neiINCgl9XSwNCgkicmVwb3J0X2ZpbGVzIjogW3sNCgkJImNsYXNzIjogIkZpbGUiLA0KCQkicGF0aCI6ICIuL3RtcC9FUlIwMzA4ODZfMl9mYXN0cWMuaHRtbCINCgl9LCB7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAiLi90bXAvRVJSMDMwODg2XzFfZmFzdHFjLmh0bWwiDQoJfV0sDQoJInppcHBlZF9maWxlcyI6IFt7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAiLi90bXAvRVJSMDMwODg2XzJfZmFzdHFjLnppcCINCgl9LCB7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAiLi90bXAvRVJSMDMwODg2XzFfZmFzdHFjLnppcCINCgl9XQ0KfQ==",
+  "docker_uri": "quay.io/wshands/fastqc:latest",
+  "dockstore_url": "https://dockstore.org/containers/quay.io/wshands/fastqc",
+  "workflow_type": "sequence_upload_qc_report ",
+  "parent_uuids": "<parent uuid>",
+  "tmpdir": "<path in $TMPDIR env var>",
+  "vm_instance_type": "m4.4xlarge",
+  "vm_region": "us-west-2",
+  "vm_location": "aws",
+  "vm_instance_cores": 16,
+  "vm_instance_mem_gb": 64,
+  "output_metadata_json": "/tmp/metadata.json"
+}

@@ -68,6 +68,10 @@ To encode and decode online see: https://www.base64encode.org/
 
 ## Via Docker
 
+Build the docker image:
+
+     docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 .
+
 ## Via cwltool
 NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPACE TO HOLD INPUT, OUTPUT AND INTERMEDIATE FILES. Otherwise cwltool will use /VAR/SPOOL/CWL by default which may not have enough space.
 

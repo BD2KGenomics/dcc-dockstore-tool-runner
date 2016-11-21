@@ -37,7 +37,7 @@ class DockstoreRunner:
         parser.add_argument('--json-encoded', default='e30=', required=True)
         parser.add_argument('--docker-uri', default='quay.io/wshands/fastqc:latest', required=True)
         parser.add_argument('--dockstore-url', default='https://dockstore.org/containers/quay.io/wshands/fastqc', required=True)
-        parser.add_argument('--workflow-type', default='qc', required=True)
+        parser.add_argument('--workflow-type', default='sequence_upload_qc_report', required=True)
         parser.add_argument('--parent-uuids', default='parent-UUID-dummy-value', required=True)
         # FIXME: this append seems to crash on the mac but it would be the way to go if we want multiple parents
         #parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', action='append', required=True)
