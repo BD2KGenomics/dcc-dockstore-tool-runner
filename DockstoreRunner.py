@@ -1,3 +1,11 @@
+""" 
+    author Brian O'Conner 
+    broconno@ucsc.com 
+        
+
+
+"""
+
 import json
 import time
 import re
@@ -8,6 +16,9 @@ import base64
 from urllib import urlopen
 from uuid import uuid4
 
+import os
+import sys
+=======
 # TODO:
 # Items needed:
 # * analysis type
@@ -28,6 +39,13 @@ class DockstoreRunner:
         parser.add_argument('--dockstore-uri', default='quay.io/wshands/fastqc', required=True)
         parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', required=True)
         #parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', action='append', required=True)
+        parser.add_argument('-d', '--tmpdir', type=str, required=True,
+                        help="Path to tmpdir, e.g. /path/to/temporary directory for"
+                        " container to write intermediate files.")
+
+
+
+
         # get args
         args = parser.parse_args()
         self.redwood_path = args.redwood_path
@@ -36,6 +54,8 @@ class DockstoreRunner:
         self.json_encoded = args.json_encoded
         self.dockstore_uri = args.dockstore_uri
         self.parent_uuids = args.parent_uuid
+
+        self.tmpdir = args.tmpdir
         # run
         self.run()
 
@@ -120,10 +140,21 @@ class DockstoreRunner:
         print "** RUN DOCKSTORE TOOL **"
         t_utc_datetime = datetime.utcnow()
         t_start = time.time()
-        # WALT: this is where we need to integration your work
-        cmd = "dockstore tool launch --entry "+self.dockstore_uri+" --json "+transformed_json_path
+
+        #set the container's TMPDIR env variable to the same directory as on the host.
+        #This ensures the files written by dockstore in creating this container
+        #will be in the same directory as those written by the container created
+        #by the dockstore command below
+        os.environ["TMPDIR"] = self.tmpdir
+   
+        #dockstore should be on the PATH assuming we are running as root as it was
+        #installed in /root in the Dockerfile
+        cmd = ["dockstore", "tool", "launch", "--debug", "--entry", self.dockstore_uri, "--json", transformed_json_path]
+        #TODO: put try catch block around suprocess.call to cleanup and print
+        #error messages?
         print cmd
-        # TODO: actually perform this run!!!
+        output = subprocess.call(cmd)
+
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()
         t_diff = int(t_end - t_start)
