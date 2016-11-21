@@ -1,9 +1,6 @@
-""" 
-    author Brian O'Conner 
-    broconno@ucsc.com 
-        
-
-
+"""
+    author Brian O'Conner
+    broconno@ucsc.com
 """
 
 import json
@@ -41,12 +38,19 @@ class DockstoreRunner:
         parser.add_argument('--docker-uri', default='quay.io/wshands/fastqc:latest', required=True)
         parser.add_argument('--dockstore-url', default='https://dockstore.org/containers/quay.io/wshands/fastqc', required=True)
         parser.add_argument('--workflow-type', default='qc', required=True)
-        parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', required=True)
+        parser.add_argument('--parent-uuids', default='parent-UUID-dummy-value', required=True)
         # FIXME: this append seems to crash on the mac but it would be the way to go if we want multiple parents
         #parser.add_argument('--parent-uuid', default='parent-UUID-dummy-value', action='append', required=True)
         parser.add_argument('-d', '--tmpdir', type=str, required=True,
                         help="Path to tmpdir, e.g. /path/to/temporary directory for"
                         " container to write intermediate files.")
+        parser.add_argument('--vm-instance-type', default='unknown', required=True)
+        parser.add_argument('--vm-region', default='unknown', required=True)
+        parser.add_argument('--vm-instance-cores', type=int, default='unknown', required=True)
+        parser.add_argument('--vm-instance-mem-gb', type=int, default='unknown', required=True)
+        parser.add_argument('--vm-location', default='unknown', required=True, help='the cloud e.g. aws')
+        'm4.4xlarge', 'us-west-2', 16, 64, 'aws'
+
         # get args
         args = parser.parse_args()
         self.redwood_path = args.redwood_path
@@ -58,10 +62,15 @@ class DockstoreRunner:
         self.workflow_name = args.docker_uri.split(':')[0]
         self.workflow_version = args.docker_uri.split(':')[1]
         self.workflow_type = args.workflow_type
-        self.parent_uuids = args.parent_uuid
+        self.parent_uuids = args.parent_uuids
         self.bundle_uuid = uuid4()
+        self.vm_instance_type = args.vm_instance_type
+        self.vm_region = args.vm_region
+        self.vm_instance_cores = args.vm_instance_cores
+        self.vm_instance_mem_gb = args.vm_instance_mem_gb
+        self.vm_location = args.vm_location
         #self.tmp_dir = './datastore-tool-launcher'
-        self.tmpdir = args.tmpdir
+        self.tmp_dir = args.tmpdir
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
         if not os.path.exists(self.tmp_dir+"/upload/"+str(self.bundle_uuid)):
@@ -269,8 +278,8 @@ class DockstoreRunner:
         #This ensures the files written by dockstore in creating this container
         #will be in the same directory as those written by the container created
         #by the dockstore command below
-        os.environ["TMPDIR"] = self.tmpdir
-   
+        os.environ["TMPDIR"] = self.tmp_dir
+
         #dockstore should be on the PATH assuming we are running as root as it was
         #installed in /root in the Dockerfile
         cmd = ["dockstore", "tool", "launch", "--debug", "--entry", self.dockstore_uri, "--json", transformed_json_path]
@@ -365,7 +374,7 @@ class DockstoreRunner:
       "vm_location" : "%s"
    }
 }
-        ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, 'm4.4xlarge', 'us-west-2', 16, 64, 'aws')
+        ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, self.vm_instance_type, self.vm_region, self.vm_instance_cores, self.vm_instance_mem_gb, self.vm_location)
         # FIXME: hardcoded instance information
         f = open(self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json', 'w')
         print >>f, metadata
@@ -383,6 +392,9 @@ java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePasswor
         result = subprocess.call(cmd, shell=True)
         if result != 0:
             print "ERRORS UPLOADING!!"
+        else:
+            # this stages the metadata.json to be the return file
+            subprocess.call('cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./', shell=True)
 #        else:
 #            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
 #            print "CLEANUP CMD: "+cmd

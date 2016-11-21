@@ -39,14 +39,13 @@ RUN pip install cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.201607
 #and which will be able to access the same TMPDIR on the host
 #this patch addes code to job.py and assumes the file is at
 #/usr/local/lib/python2.7/dist-packages/cwltool/job.py
-#TODO?? make sure the path exists and the current version 
+#TODO?? make sure the path exists and the current version
 #of python is the right one?
 COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
 
 # install the Redwood client code
-RUN wget https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/ucsc-storage-client.tar.gz
-RUN mv ucsc-storage-client.tar.gz /usr/local/ && cd /usr/local && tar zxf ucsc-storage-client.tar.gz && rm ucsc-storage-client.tar.gz && chmod -R a+r ucsc-storage-client
+RUN wget https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/ucsc-storage-client.tar.gz && mv ucsc-storage-client.tar.gz /usr/local/ && cd /usr/local && tar zxf ucsc-storage-client.tar.gz && rm ucsc-storage-client.tar.gz && chmod -R a+rx ucsc-storage-client
 
 #Add ubuntu user and group
 RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
@@ -59,7 +58,7 @@ RUN chown ubuntu:ubuntu /home/ubuntu
 COPY .dockstore/ /home/ubuntu/.dockstore
 RUN chown -R ubuntu:ubuntu /home/ubuntu/.dockstore
 COPY Dockstore/ /home/ubuntu/Dockstore
-RUN chown -R ubuntu:ubuntu /home/ubuntu/Dockstore
+RUN chown -R ubuntu:ubuntu /home/ubuntu/Dockstore && chmod a+x /home/ubuntu/Dockstore/dockstore
 
 ENV PATH /home/ubuntu/Dockstore/:$PATH
 #ENV HOME /home/ubuntu
@@ -67,6 +66,7 @@ ENV PATH /home/ubuntu/Dockstore/:$PATH
 #copy dockstore files to root so root can run dockstore
 COPY .dockstore/ /root/.dockstore
 COPY Dockstore/ /root/Dockstore
+RUN chmod a+x /root/Dockstore/dockstore
 
 ENV PATH /root/Dockstore/:$PATH
 ENV HOME /root
@@ -84,4 +84,3 @@ ENV DOCKSTORE_ROOT 1
 #and there is no way to set this up at build time
 USER root
 #USER ubuntu
-
