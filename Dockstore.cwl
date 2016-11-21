@@ -63,6 +63,12 @@ inputs:
     inputBinding:
       prefix: --dockstore-url
 
+  workflow_type:
+    type: string
+    doc: "String that describes the workflow type: [qc, sequence_upload, sequence_upload_qc_report, alignment, alignment_qc_report, rna_seq_quantification, germline_variant_calling, somatic_variant_calling, immuno_target_pipelines]"
+    inputBinding:
+      prefix: --workflow-type
+
   parent_uuids:
     type: string
     doc: "UUIDs for parent"
