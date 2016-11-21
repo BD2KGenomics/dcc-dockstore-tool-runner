@@ -282,7 +282,7 @@ class DockstoreRunner:
 
         #dockstore should be on the PATH assuming we are running as root as it was
         #installed in /root in the Dockerfile
-        cmd = ["dockstore", "tool", "launch", "--debug", "--entry", self.dockstore_uri, "--json", transformed_json_path]
+        cmd = ["dockstore", "tool", "launch", "--debug", "--entry", self.docker_uri, "--json", transformed_json_path]
         #TODO: put try catch block around suprocess.call to cleanup and print
         #error messages?
         print cmd
