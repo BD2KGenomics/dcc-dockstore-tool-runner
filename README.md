@@ -70,6 +70,7 @@ To encode and decode online see: https://www.base64encode.org/
 
 Build the docker image:
 
+    # patch in /usr/local/lib/python2.7/dist-packages/cwltool
     # make a tmpdir like /datastore
     docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0 .
     # fill in your JSON from Dockstore.json template as Dockstore.my.json
