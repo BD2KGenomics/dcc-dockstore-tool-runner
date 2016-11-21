@@ -287,7 +287,7 @@ class DockstoreRunner:
         #TODO: put try catch block around suprocess.call to cleanup and print
         #error messages?
         print cmd
-        result = subprocess.call(cmd, shell=True)
+        result = subprocess.call(cmd, shell=False)
         if result != 0:
             print "ERRORS running dockstore CMD!!!"
         else:
