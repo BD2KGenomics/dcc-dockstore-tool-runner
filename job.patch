@@ -1,0 +1,124 @@
+--- job.py	2016-11-22 02:16:21.207420139 +0000
++++ job_new.py	2016-11-22 02:16:21.207420139 +0000
+@@ -96,6 +96,10 @@
+ 
+         if img_id:
+             runtime = ["docker", "run", "-i"]
++            runtime.append(u"--volume=%s:%s:rw" % ("/var/run/docker.sock", "/var/run/docker.sock"))
++            #runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.outdir)), os.path.normpath(os.path.dirname(self.outdir))))
++            runtime.append(u"--volume=%s:%s:rw" % ('/datastore', '/datastore'))
++            
+             for src in self.pathmapper.files():
+                 vol = self.pathmapper.mapper(src)
+                 if vol.type == "File":
+@@ -105,9 +109,9 @@
+                     with open(createtmp, "w") as f:
+                         f.write(vol.resolved.encode("utf-8"))
+                     runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
+-            runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.outdir), "/var/spool/cwl"))
+-            runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.tmpdir), "/tmp"))
+-            runtime.append(u"--workdir=%s" % ("/var/spool/cwl"))
++            #runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.outdir), "/var/spool/cwl"))
++            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.tmpdir)), "/tmp"))
++            runtime.append(u"--workdir=%s" % (os.path.normpath(os.path.dirname(self.outdir))))
+             runtime.append("--read-only=true")
+             if (kwargs.get("enable_net", None) is None and
+                     kwargs.get("custom_net", None) is not None):
+@@ -124,12 +128,12 @@
+             if rm_container:
+                 runtime.append("--rm")
+ 
+-            runtime.append("--env=TMPDIR=/tmp")
++            runtime.append("--env=TMPDIR="+os.path.normpath(os.path.dirname(self.tmpdir)))
+ 
+             # spec currently says "HOME must be set to the designated output
+             # directory." but spec might change to designated temp directory.
+             # runtime.append("--env=HOME=/tmp")
+-            runtime.append("--env=HOME=/var/spool/cwl")
++            runtime.append("--env=HOME="+os.path.normpath(os.path.dirname(self.outdir)))
+ 
+             for t,v in self.environment.items():
+                 runtime.append(u"--env=%s=%s" % (t, v))
+@@ -137,9 +141,9 @@
+             runtime.append(img_id)
+         else:
+             env = self.environment
+-            if not os.path.exists(self.tmpdir):
+-                os.makedirs(self.tmpdir)
+-            env["TMPDIR"] = self.tmpdir
++            if not os.path.exists(os.path.normpath(os.path.dirname(self.tmpdir))):
++                os.makedirs(os.path.normpath(os.path.dirname(self.tmpdir)))
++            env["TMPDIR"] = os.path.normpath(os.path.dirname(self.tmpdir))
+             vars_to_preserve = kwargs.get("preserve_environment")
+             if vars_to_preserve is not None:
+                 for key, value in os.environ.items():
+@@ -161,7 +165,7 @@
+ 
+         _logger.info(u"[job %s] %s$ %s%s%s%s",
+                      self.name,
+-                     self.outdir,
++                     os.path.normpath(os.path.dirname(self.outdir)),
+                      " \\\n    ".join([shellescape.quote(str(arg)) if shouldquote(str(arg)) else str(arg) for arg in (runtime + self.command_line)]),
+                      u' < %s' % self.stdin if self.stdin else '',
+                      u' > %s' % os.path.join(self.outdir, self.stdout) if self.stdout else '',
+@@ -174,8 +178,8 @@
+ 
+         try:
+             if self.generatefiles["listing"]:
+-                generatemapper = PathMapper([self.generatefiles], self.outdir,
+-                                            self.outdir, separateDirs=False)
++                generatemapper = PathMapper([self.generatefiles], os.path.normpath(os.path.dirname(self.outdir)),
++                                            os.path.normpath(os.path.dirname(self.outdir)), separateDirs=False)
+                 _logger.debug(u"[job %s] initial work dir %s", self.name,
+                               json.dumps({p: generatemapper.mapper(p) for p in generatemapper.files()}, indent=4))
+                 def linkoutdir(src, tgt):
+@@ -193,7 +197,7 @@
+                 stdin = subprocess.PIPE
+ 
+             if self.stderr:
+-                abserr = os.path.join(self.outdir, self.stderr)
++                abserr = os.path.join(os.path.normpath(os.path.dirname(self.outdir)), self.stderr)
+                 dnerr = os.path.dirname(abserr)
+                 if dnerr and not os.path.exists(dnerr):
+                     os.makedirs(dnerr)
+@@ -202,7 +206,7 @@
+                 stderr = sys.stderr
+ 
+             if self.stdout:
+-                absout = os.path.join(self.outdir, self.stdout)
++                absout = os.path.join(os.path.normpath(os.path.dirname(self.outdir)), self.stdout)
+                 dn = os.path.dirname(absout)
+                 if dn and not os.path.exists(dn):
+                     os.makedirs(dn)
+@@ -217,7 +221,7 @@
+                                   stderr=stderr,
+                                   stdout=stdout,
+                                   env=env,
+-                                  cwd=self.outdir)
++                                  cwd=os.path.normpath(os.path.dirname(self.outdir)))
+ 
+             if sp.stdin:
+                 sp.stdin.close()
+@@ -253,7 +257,7 @@
+                         os.symlink(src, tgt)
+                 stageFiles(generatemapper, linkoutdir)
+ 
+-            outputs = self.collect_outputs(self.outdir)
++            outputs = self.collect_outputs(os.path.normpath(os.path.dirname(self.outdir)))
+ 
+         except OSError as e:
+             if e.errno == 2:
+@@ -284,9 +288,9 @@
+             shutil.rmtree(self.stagedir, True)
+ 
+         if rm_tmpdir:
+-            _logger.debug(u"[job %s] Removing temporary directory %s", self.name, self.tmpdir)
++            _logger.debug(u"[job %s] Removing temporary directory %s", self.name, os.path.normpath(os.path.dirname(self.tmpdir)))
+             shutil.rmtree(self.tmpdir, True)
+ 
+-        if move_outputs == "move" and empty_subtree(self.outdir):
+-            _logger.debug(u"[job %s] Removing empty output directory %s", self.name, self.outdir)
+-            shutil.rmtree(self.outdir, True)
++        if move_outputs == "move" and empty_subtree(os.path.normpath(os.path.dirname(self.outdir))):
++            _logger.debug(u"[job %s] Removing empty output directory %s", self.name, os.path.normpath(os.path.dirname(self.outdir)))
++            shutil.rmtree(os.path.normpath(os.path.dirname(self.outdir)), True)
