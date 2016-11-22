@@ -1,3 +1,0 @@
-{"fastq_file": [{"path": "./tmp/8ebdb03a-3c99-5f32-811c-9d74b88151ec/ERR030886_1.small.fastq.gz", "class": "File"}, {"path": "./tmp/8ebdb03a-3c99-5f32-811c-9d74b88151ec/ERR030886_2.small.fastq.gz", "class": "File"}], 
-   "foo" : 1212,
-   "bar" : "car"}
