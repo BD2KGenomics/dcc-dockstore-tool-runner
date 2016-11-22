@@ -43,6 +43,10 @@ RUN pip install cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.201607
 #of python is the right one?
 COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
+COPY main.patch /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
+COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
 
 # install the Redwood client code
 RUN wget https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/ucsc-storage-client.tar.gz && mv ucsc-storage-client.tar.gz /usr/local/ && cd /usr/local && tar zxf ucsc-storage-client.tar.gz && rm ucsc-storage-client.tar.gz && chmod -R a+rx ucsc-storage-client
