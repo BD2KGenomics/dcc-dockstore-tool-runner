@@ -1,16 +1,17 @@
---- job.py	2016-11-21 23:17:01.843302753 +0000
-+++ job_new.py	2016-11-21 23:06:45.031570411 +0000
-@@ -96,6 +96,9 @@
+--- job.py	2016-11-22 02:16:21.207420139 +0000
++++ job_new.py	2016-11-22 02:16:21.207420139 +0000
+@@ -96,6 +96,10 @@
  
          if img_id:
              runtime = ["docker", "run", "-i"]
 +            runtime.append(u"--volume=%s:%s:rw" % ("/var/run/docker.sock", "/var/run/docker.sock"))
-+            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.outdir)), os.path.normpath(os.path.dirname(self.outdir))))
++            #runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.outdir)), os.path.normpath(os.path.dirname(self.outdir))))
++            runtime.append(u"--volume=%s:%s:rw" % ('/datastore', '/datastore'))
 +            
              for src in self.pathmapper.files():
                  vol = self.pathmapper.mapper(src)
                  if vol.type == "File":
-@@ -105,9 +108,9 @@
+@@ -105,9 +109,9 @@
                      with open(createtmp, "w") as f:
                          f.write(vol.resolved.encode("utf-8"))
                      runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
@@ -23,7 +24,7 @@
              runtime.append("--read-only=true")
              if (kwargs.get("enable_net", None) is None and
                      kwargs.get("custom_net", None) is not None):
-@@ -124,12 +127,12 @@
+@@ -124,12 +128,12 @@
              if rm_container:
                  runtime.append("--rm")
  
@@ -38,7 +39,7 @@
  
              for t,v in self.environment.items():
                  runtime.append(u"--env=%s=%s" % (t, v))
-@@ -137,9 +140,9 @@
+@@ -137,9 +141,9 @@
              runtime.append(img_id)
          else:
              env = self.environment
@@ -51,7 +52,7 @@
              vars_to_preserve = kwargs.get("preserve_environment")
              if vars_to_preserve is not None:
                  for key, value in os.environ.items():
-@@ -161,7 +164,7 @@
+@@ -161,7 +165,7 @@
  
          _logger.info(u"[job %s] %s$ %s%s%s%s",
                       self.name,
@@ -60,7 +61,7 @@
                       " \\\n    ".join([shellescape.quote(str(arg)) if shouldquote(str(arg)) else str(arg) for arg in (runtime + self.command_line)]),
                       u' < %s' % self.stdin if self.stdin else '',
                       u' > %s' % os.path.join(self.outdir, self.stdout) if self.stdout else '',
-@@ -174,8 +177,8 @@
+@@ -174,8 +178,8 @@
  
          try:
              if self.generatefiles["listing"]:
@@ -71,7 +72,7 @@
                  _logger.debug(u"[job %s] initial work dir %s", self.name,
                                json.dumps({p: generatemapper.mapper(p) for p in generatemapper.files()}, indent=4))
                  def linkoutdir(src, tgt):
-@@ -193,7 +196,7 @@
+@@ -193,7 +197,7 @@
                  stdin = subprocess.PIPE
  
              if self.stderr:
@@ -80,7 +81,7 @@
                  dnerr = os.path.dirname(abserr)
                  if dnerr and not os.path.exists(dnerr):
                      os.makedirs(dnerr)
-@@ -202,7 +205,7 @@
+@@ -202,7 +206,7 @@
                  stderr = sys.stderr
  
              if self.stdout:
@@ -89,7 +90,7 @@
                  dn = os.path.dirname(absout)
                  if dn and not os.path.exists(dn):
                      os.makedirs(dn)
-@@ -217,7 +220,7 @@
+@@ -217,7 +221,7 @@
                                    stderr=stderr,
                                    stdout=stdout,
                                    env=env,
@@ -98,7 +99,7 @@
  
              if sp.stdin:
                  sp.stdin.close()
-@@ -253,7 +256,7 @@
+@@ -253,7 +257,7 @@
                          os.symlink(src, tgt)
                  stageFiles(generatemapper, linkoutdir)
  
@@ -107,7 +108,7 @@
  
          except OSError as e:
              if e.errno == 2:
-@@ -284,9 +287,9 @@
+@@ -284,9 +288,9 @@
              shutil.rmtree(self.stagedir, True)
  
          if rm_tmpdir:

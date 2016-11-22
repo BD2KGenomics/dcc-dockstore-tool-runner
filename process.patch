@@ -1,0 +1,22 @@
+--- process.py	2016-11-22 02:16:21.203420036 +0000
++++ process_new.py	2016-11-22 02:16:21.203420036 +0000
+@@ -196,14 +196,17 @@
+ 
+ def relocateOutputs(outputObj, outdir, output_dirs, action):
+     # type: (Union[Dict[unicode, Any], List[Dict[unicode, Any]]], unicode, Set[unicode], unicode) -> Union[Dict[unicode, Any], List[Dict[unicode, Any]]]
+-    print "RELOCATE: %s %s %s %s" % (outputObj, outdir, output_dirs, action)
++    print "RELOCATE: %s %s %s %s" % (outputObj, outdir, set(['/datastore']), action)
+     if action not in ("move", "copy"):
++        print "HERE!!"
+         return outputObj
+ 
+     def moveIt(src, dst):
+-        for a in output_dirs:
++        for a in set(['/datastore']):
++            print "CURR VAL: "+a
+             if src.startswith(a):
+                 if action == "move":
++                    print "HERE!!!!!"
+                     _logger.debug("Moving %s to %s", src, dst)
+                     shutil.move(src, dst)
+                 elif action == "copy":
