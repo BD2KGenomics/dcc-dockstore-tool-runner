@@ -204,6 +204,8 @@ class DockstoreRunner:
             file_path = uri_pieces[5]
             print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
             return(self.tmp_dir+"/"+bundle_uuid+"/"+file_path)
+        elif path.startswith('http://') or path.startswith('https://') or path.startswith('s3://') or path.startswith('sftp://') or path.startswith('ftp://'):
+            return(path)
         else: # it's a local path, reform to use our upload directory
             uri_pieces = path.split("/")
             file_path = uri_pieces[-1]
@@ -228,7 +230,7 @@ class DockstoreRunner:
                         self.known_inputs[key] = True
                     map_of_redwood_to_local[path] = self.convert_to_local_path(path)
                     parsed_json[key]['path'] = map_of_redwood_to_local[path]
-            elif isinstance(value, list): 
+            elif isinstance(value, list):
                 for arr_value in parsed_json[key]:
                     if arr_value['class'] == 'File':
                         path = arr_value['path']
