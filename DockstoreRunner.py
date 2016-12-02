@@ -228,7 +228,7 @@ class DockstoreRunner:
                         self.known_inputs[key] = True
                     map_of_redwood_to_local[path] = self.convert_to_local_path(path)
                     parsed_json[key]['path'] = map_of_redwood_to_local[path]
-            else: # then assuming it's an array!
+            elif isinstance(value, list): 
                 for arr_value in parsed_json[key]:
                     if arr_value['class'] == 'File':
                         path = arr_value['path']
