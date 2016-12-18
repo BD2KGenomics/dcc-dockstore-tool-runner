@@ -2,10 +2,6 @@
 
 A Dockstore tool designed to perform file downloads from Redwood, run another Dockstore tool, and then prepare a metadata.json and upload results to Redwood.
 
-## TODO
-
-* patch doesn't apply cleanly!  1 hunk failed.
-
 ## Running Locally
 
 Normally you would not run directly, you are always going to run this via Dockstore or, maybe, via Docker.  For development purposes, though, you may want to setup a local environment for debugging and extending this tool.
@@ -102,3 +98,13 @@ Sample:
     AttributeError: 'str' object has no attribute 'append'
 
 Looks like a bug in Python 2.7 shipped with MacOS since it was fixed on [Ubuntu](https://bugs.launchpad.net/ubuntu/+source/python2.7/+bug/1048710).
+
+The params section of metadata.json needs to be fixed:
+
+    "workflow_params" : {
+      "%s": "%s","%s": "%s","%s": "%s","%s": "%s","%s": "%s","%s": "%s"
+    }
+
+## TODO
+
+* need to fix the params issue
