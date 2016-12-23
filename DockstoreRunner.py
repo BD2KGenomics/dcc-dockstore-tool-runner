@@ -108,7 +108,7 @@ class DockstoreRunner:
             file_map = {}
             if isinstance(value, dict):
                 if parsed_json[key]['class'] == 'File':
-                    self.fill_in_file_dict(file_map, parsed_json)
+                    self.fill_in_file_dict(file_map, parsed_json[key])
                     result.append(file_map)
                     file_map = {}
             elif isinstance(value, list):
