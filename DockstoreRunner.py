@@ -252,7 +252,7 @@ class DockstoreRunner:
                 file_path = uri_pieces[5]
                 cmd = "mkdir -p "+self.tmp_dir+" && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
                 print cmd
-                result = subprocess.call(cmd, shell=True)
+                result = subprocess.call(cmd, shell=True) #could we just return result, if it != 0 failed download? -thomas
                 print "DOWNLOAD RESULT: "+str(result)
         return(self.tmp_dir+'/updated_sample.json')
 
