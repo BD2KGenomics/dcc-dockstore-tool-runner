@@ -262,7 +262,12 @@ class DockstoreRunner:
         d_utc_datetime = datetime.utcnow()
         d_start = time.time()
         # this will download and create a new JSON
-        transformed_json_path = self.download_and_transform_json(self.json_encoded)
+        for i in xrange(0, 3): #could potentially try downloading 3 times, if fail cancel task?
+            transformed_json_path = self.download_and_transform_json(self.json_encoded)
+            if(os.path.exists(transformed_json_path)): break #check if downloaded correctly here
+            elif(i == 2): #after 3 tries exits with failure
+                print >> sys.stderr, "Unable to complete download from redwood"
+                sys.exit(1) #error exit (reap worker with error exit?)
         d_end = time.time()
         d_utc_datetime_end = datetime.utcnow()
         d_diff = int(d_end - d_start)
@@ -392,12 +397,16 @@ echo "Performing Uploads:" && \
 java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt
 #        ''' % (self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
         print "CMD: "+cmd
-        result = subprocess.call(cmd, shell=True)
-        if result != 0:
-            print "ERRORS UPLOADING!!"
-        else:
-            # this stages the metadata.json to be the return file
-            subprocess.call('cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./', shell=True)
+        for i in xrange(0, 3):
+                result = subprocess.call(cmd, shell=True)
+                if result == 0: break
+                elif i == 2:
+                    print >> sys.stderr, "Unable to complete upload to redwood, exiting"
+                    #cleanup here??
+                    sys.exit(1)
+        # this stages the metadata.json to be the return file
+        subprocess.call('cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./', shell=True)
+        #why is the cleanup commented out? - thomas
 #        else:
 #            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
 #            print "CLEANUP CMD: "+cmd
