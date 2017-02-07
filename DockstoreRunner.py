@@ -93,6 +93,7 @@ class DockstoreRunner:
     def map_outputs(self):
         # going to need to read from datastore
         # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
+        # There is probably a better way to do this than look for most recently modified file
         result = []
         path = 'datastore'
         #files = sorted(os.listdir(path), key=os.path.getmtime)
@@ -254,7 +255,7 @@ class DockstoreRunner:
                 print cmd
                 result = subprocess.call(cmd, shell=True) #could we just return result, if it != 0 failed download? -thomas
                 print "DOWNLOAD RESULT: "+str(result)
-        return(self.tmp_dir+'/updated_sample.json')
+        return result, self.tmp_dir+'/updated_sample.json'
 
     ''' Kick off main analysis '''
     def run(self):
@@ -263,8 +264,8 @@ class DockstoreRunner:
         d_start = time.time()
         # this will download and create a new JSON
         for i in xrange(0, 3): #could potentially try downloading 3 times, if fail cancel task?
-            transformed_json_path = self.download_and_transform_json(self.json_encoded)
-            if(os.path.exists(transformed_json_path)): break #check if downloaded correctly here
+            result, transformed_json_path = self.download_and_transform_json(self.json_encoded)
+            if(result == 0): break #check if downloaded correctly here
             elif(i == 2): #after 3 tries exits with failure
                 print >> sys.stderr, "Unable to complete download from redwood"
                 sys.exit(1) #error exit (reap worker with error exit?)
