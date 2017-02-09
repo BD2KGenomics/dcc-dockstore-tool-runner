@@ -1,6 +1,16 @@
+#!/usr/bin/env python
+from __future__ import print_function, division
+
+
 """
     author Brian O'Conner
     broconno@ucsc.com
+
+    This module launches a tool and uploads metadata and result files. It first
+    downloads input files from the UCSC-cgl.org storage system, then launches 
+    the Dockstore tool, then creates metadata describing the inputs and results,
+    uploades the metadata and then uploads the result files.   
+
 """
 
 import json
@@ -17,6 +27,8 @@ from uuid import uuid4
 import os
 import sys
 
+
+
 # TODO:
 # Items needed:
 # * analysis type
@@ -30,6 +42,9 @@ import sys
 class DockstoreRunner:
 
     def __init__(self):
+        self.MAX_RETRIES = 3
+        self.DELAY_IN_SECONDS = 30
+
         parser = argparse.ArgumentParser(description='Downloads, runs tool via Dockstore, then uploads results.')
         parser.add_argument('--redwood-path', default='/usr/local/ucsc-storage-client', required=False)
         parser.add_argument('--redwood-token', default='token-UUID-dummy-value', required=True)
@@ -78,6 +93,47 @@ class DockstoreRunner:
         # run
         self.run()
 
+    def run_command(self, command_string, max_retries, delay_in_seconds): 
+        print(command_string)
+        #command must be formatted as a list of strings; e.g. 
+        #command = ["dockstore", "tool", "launch", "--debug", "--entry", self.docker_uri, "--json", "transformed_json_path"]
+        command = command_string.split()
+        print("command list object:")
+        print(command)
+        for retry_number in range(max_retries):
+            if retry_number > 0:
+                #we are about to retry the command, but sleep for a number of seconds before retrying
+                print("Waiting for "+str(delay_in_seconds)+" seconds before retrying")
+                time.sleep(delay_in_seconds)
+
+            print("\nDockstore tool runner executing command: " + command_string)
+            print("Attempt number "+str(retry_number+1)+" of "+str(max_retries))
+            try:
+                subprocess.check_call(command)
+            except subprocess.CalledProcessError as e:
+                #If we get here then the called command return code was non zero
+                print("\nERROR!!! DOCKSTORE TOOL RUNNER CMD:" + command_string + " FAILED !!!", file=sys.stderr)
+                print("\nReturn code:" + str(e.returncode), file=sys.stderr)
+                return_code = e.returncode
+            except Exception as e:
+                print("\nERROR!!! DOCKSTORE TOOL RUNNER CMD:" + command_string + " THREW AN EXCEPTION !!!", file=sys.stderr)
+                print("\nException information:" + str(e), file=sys.stderr)
+                #if we get here the called command threw an exception other than just
+                #returning a non zero return code, so just set the return code to 1.
+                return_code = 1
+            #in try constructs, the else block runs if no exception happened
+            #which in this case indicates the command succeeded
+            else:
+                print("CMD "+ command_string + " SUCCESSFUL IN DOCKSTORE TOOL RUNNER!!")
+                return_code = 0
+                #break out of the retry loop since the command was successful
+                break;
+        #the else block is executed if the loop didn't exit abnormally (i.e. with break in
+        #the try: else: statement that indicates the command was successful
+        else:
+            print("Exiting Dockstore tool runner due to call error in command "+command_string+" after "+str(max_retries)+" attempts", file=sys.stderr)
+            sys.exit(return_code)
+
     ''' output files filled into a dict '''
     def fill_in_file_dict(self, file_map, parsed_json):
         file_map['file_size'] = parsed_json['size']
@@ -104,7 +160,7 @@ class DockstoreRunner:
         with open(path) as data_file:
             parsed_json = json.load(data_file)
         for key, value in parsed_json.iteritems():
-            print "ITEM: "+key
+            print("ITEM: "+key)
             file_map = {}
             if isinstance(value, dict):
                 if parsed_json[key]['class'] == 'File':
@@ -118,7 +174,7 @@ class DockstoreRunner:
                             self.fill_in_file_dict(file_map, arr_value)
                             result.append(file_map)
                             file_map = {}
-        print result
+        print(result)
         return(result)
 
     ''' make a dict of input files '''
@@ -130,7 +186,7 @@ class DockstoreRunner:
         # this needs to idenitfy anything with redwood:// and transform it to local path. Also need to deal with output paths
         data = json.loads(decoded)
         for key, value in data.iteritems():
-            print "ITEM: "+key
+            print("ITEM: "+key)
             if key in self.known_inputs:
                 if isinstance(value, dict):
                     if data[key]['class'] == 'File':
@@ -181,7 +237,7 @@ class DockstoreRunner:
         with open(transformed_json_path) as data_file:
             data = json.load(data_file)
         for key, value in data.iteritems():
-            print "ITEM: "+key
+            print("ITEM: "+key)
             if isinstance(value, dict):
                 if data[key]['class'] == 'File':
                     file_map[key] = True
@@ -202,7 +258,7 @@ class DockstoreRunner:
             bundle_uuid = uri_pieces[3]
             file_uuid = uri_pieces[4]
             file_path = uri_pieces[5]
-            print "B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path
+            print("B: "+bundle_uuid+" F: "+file_uuid+" P: "+file_path)
             return(self.tmp_dir+"/"+bundle_uuid+"/"+file_path)
         elif path.startswith('http://') or path.startswith('https://') or path.startswith('s3://') or path.startswith('sftp://') or path.startswith('ftp://'):
             return(path)
@@ -216,16 +272,16 @@ class DockstoreRunner:
         decoded = base64.urlsafe_b64decode(json_encoded)
         # this needs to idenitfy anything with redwood:// and transform it to local path. Also need to deal with output paths
         parsed_json = json.loads(decoded)
-        print "PARSED JSON: "+decoded
+        print("PARSED JSON: "+decoded)
         map_of_redwood_to_local = {}
         # need to track what are inputs, since all inputs are files from redwood they are easy to flag
         self.known_inputs = {}
         for key, value in parsed_json.iteritems():
-            print "ITEM: "+key
+            print("ITEM: "+key)
             if isinstance(value, dict):
                 if parsed_json[key]['class'] == 'File':
                     path = parsed_json[key]['path']
-                    print "PATH: "+path
+                    print("PATH: "+path)
                     if path.startswith("redwood://"):
                         self.known_inputs[key] = True
                     map_of_redwood_to_local[path] = self.convert_to_local_path(path)
@@ -234,31 +290,42 @@ class DockstoreRunner:
                 for arr_value in parsed_json[key]:
                     if arr_value['class'] == 'File':
                         path = arr_value['path']
-                        print "PATH: "+path
+                        print("PATH: "+path)
                         if path.startswith("redwood://"):
                             self.known_inputs[key] = True
                         map_of_redwood_to_local[path] = self.convert_to_local_path(path)
                         arr_value['path'] = map_of_redwood_to_local[path]
         f = open(self.tmp_dir+'/updated_sample.json', 'w')
-        print >>f, json.dumps(parsed_json)
+#        print >>f, json.dumps(parsed_json)
+        print(json.dumps(parsed_json), file=f)
         f.close()
         # now download each
         for curr_redwood_url in map_of_redwood_to_local.keys():
             if curr_redwood_url.startswith("redwood://"):
-                print "URL: "+curr_redwood_url
+                print("URL: "+curr_redwood_url)
                 uri_pieces = curr_redwood_url.split("/")
                 bundle_uuid = uri_pieces[3]
                 file_uuid = uri_pieces[4]
                 file_path = uri_pieces[5]
-                cmd = "mkdir -p "+self.tmp_dir+" && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
-                print cmd
-                result = subprocess.call(cmd, shell=True)
-                print "DOWNLOAD RESULT: "+str(result)
+
+#                cmd = "mkdir -p "+self.tmp_dir+" && java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
+#                print cmd
+#                result = subprocess.call(cmd, shell=True)
+#                print "DOWNLOAD RESULT: "+str(result)
+
+                cmd = "mkdir -p "+self.tmp_dir
+                #create list of individual command 'words' for input to run commmand function
+                self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
+                cmd = "java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
+                #create list of individual command 'words' for input to run commmand function
+                self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
         return(self.tmp_dir+'/updated_sample.json')
 
     ''' Kick off main analysis '''
     def run(self):
-        print "** DOWNLOAD **"
+        print("** DOWNLOAD **")
         d_utc_datetime = datetime.utcnow()
         d_start = time.time()
         # this will download and create a new JSON
@@ -266,14 +333,14 @@ class DockstoreRunner:
         d_end = time.time()
         d_utc_datetime_end = datetime.utcnow()
         d_diff = int(d_end - d_start)
-        print "START: "+str(d_start)+" END: "+str(d_end)+" DIFF: "+str(d_diff)
+        print("START: "+str(d_start)+" END: "+str(d_end)+" DIFF: "+str(d_diff))
 
-        print "** RUN DOCKSTORE TOOL **"
+        print("** RUN DOCKSTORE TOOL **")
         t_utc_datetime = datetime.utcnow()
         t_start = time.time()
 
-        #cmd = "dockstore tool launch --entry "+self.docker_uri+" --json "+transformed_json_path
         #print cmd
+        #cmd = "dockstore tool launch --entry "+self.docker_uri+" --json "+transformed_json_path
         #result = subprocess.call(cmd, shell=True)
 
         #set the container's TMPDIR env variable to the same directory as on the host.
@@ -284,26 +351,25 @@ class DockstoreRunner:
 
         #dockstore should be on the PATH assuming we are running as root as it was
         #installed in /root in the Dockerfile
-        result = subprocess.call('cp -R /home/ubuntu/.dockstore ./', shell=True)
-        cmd = ["dockstore", "tool", "launch", "--debug", "--entry", self.docker_uri, "--json", transformed_json_path]
-        #TODO: put try catch block around suprocess.call to cleanup and print
-        #error messages?
-        print cmd
-        result = subprocess.call(cmd, shell=False)
-        if result != 0:
-            print "ERRORS running dockstore CMD!!!"
-        else:
-            print "DOCKSTORE CMD SUCCESSFUL!!"
+#        result = subprocess.call('cp -R /home/ubuntu/.dockstore ./', shell=True)
+        print("Installing Dockstore client at root")
+        cmd = "cp -R /home/ubuntu/.dockstore ./"
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
+        print("Calling Dockstore to launch a Dockstore tool")
+#        cmd = ["dockstore", "tool", "launch", "--debug", "--entry", self.docker_uri, "--json", transformed_json_path]
+        cmd = "dockstore tool launch --debug --entry "+self.docker_uri+" --json "+transformed_json_path
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()
         t_diff = int(t_end - t_start)
         # timing information
         utc_datetime = datetime.utcnow()
-        print "TIME: "+str(utc_datetime.isoformat("T"))
+        print("TIME: "+str(utc_datetime.isoformat("T")))
         o_diff = int(t_end - d_start)
 
-        print "** UPLOAD **"
+        print("** UPLOAD **")
         metadata = '''
 {
    "version" : "1.0.0",
@@ -380,33 +446,51 @@ class DockstoreRunner:
         ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, self.vm_instance_type, self.vm_region, self.vm_instance_cores, self.vm_instance_mem_gb, self.vm_location)
         # FIXME: hardcoded instance information
         f = open(self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json', 'w')
-        print >>f, metadata
+#        print >>f, metadata
+        print(metadata, file=f)
         f.close()
 
         # now perform the upload
-        cmd = '''
-mkdir -p %s/upload/%s %s/manifest && \
-echo "Register Uploads:" && \
-java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload/%s -o %s/manifest -m manifest.txt && \
-echo "Performing Uploads:" && \
-java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt
+#        cmd = '''
+#mkdir -p %s/upload/%s %s/manifest && \
+#echo "Register Uploads:" && \
+#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload/%s -o %s/manifest -m manifest.txt && \
+#echo "Performing Uploads:" && \
+#java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt
 #        ''' % (self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir, self.bundle_uuid, self.tmp_dir, self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
-        print "CMD: "+cmd
-        result = subprocess.call(cmd, shell=True)
-        if result != 0:
-            print "ERRORS UPLOADING!!"
-        else:
-            # this stages the metadata.json to be the return file
-            subprocess.call('cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./', shell=True)
+
+
+        print("Creating upload directories")
+        cmd = "mkdir -p %s/upload/%s %s/manifest" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
+        print("Registering uploads")
+        cmd = "java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
+        print("Performing uploads")
+        cmd = "java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt" % (self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
+        print("Staging metadata.json to be the return file")
+        cmd = 'cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./'
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+
+#        result = subprocess.call(cmd, shell=True)
+#        if result != 0:
+#            print "ERRORS UPLOADING!!"
 #        else:
-#            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
-#            print "CLEANUP CMD: "+cmd
-#            result = subprocess.call(cmd, shell=True)
-#            if result == 0:
-#                print "CLEANUP SUCCESSFUL"
-#            f = self.output().open('w')
-#            print >>f, "uploaded"
-#            f.close()
+#            # this stages the metadata.json to be the return file
+#            subprocess.call('cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./', shell=True)
+##        else:
+##            cmd = "rm -rf "+self.data_dir+"/"+self.bundle_uuid+"/bamstats_report.zip "+self.data_dir+"/"+self.bundle_uuid+"/datastore/"
+##            print "CLEANUP CMD: "+cmd
+##            result = subprocess.call(cmd, shell=True)
+##            if result == 0:
+##                print "CLEANUP SUCCESSFUL"
+##            f = self.output().open('w')
+##            print >>f, "uploaded"
+##            f.close()
 
 # run the class
 if __name__ == '__main__':
