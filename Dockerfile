@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install --yes \
     build-essential
 
 RUN pip install --upgrade pip
-RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi
+RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver 
 
 #install cwltool in the container
 #use the version required by dockstore
