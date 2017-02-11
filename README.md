@@ -68,7 +68,7 @@ Build the docker image:
 
     # patch in /usr/local/lib/python2.7/dist-packages/cwltool
     # make a tmpdir like /datastore
-    docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.7 .
+    docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.8 .
     # fill in your JSON from Dockstore.json template as Dockstore.my.json
     mkdir /datastore; chown ubuntu:ubuntu /datastore/
     # local execution
@@ -76,7 +76,7 @@ Build the docker image:
     # as root in /datastore 
     TMPDIR=/datastore dockstore tool launch --entry ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl --local-entry --json ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.my.json
     # execute published on dockstore
-    dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.7 --json Dockstore.my.json
+    dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.8 --json Dockstore.my.json
 
     # running you see it launch
     cwltool --enable-dev --non-strict --enable-net --outdir /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/outputs/ --tmpdir-prefix /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/working/ /home/ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/workflow_params.json
@@ -91,7 +91,7 @@ NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPA
 
 Sample:
 
-    dockstore tool launch --entry quay.io/ucsc-cgl/DockstoreRunner:latest --json Docstore.json
+    dockstore tool launch --entry quay.io/ucsc-cgl/dockstore-tool-runner:1.0.8 --json Docstore.json
 
 ## Known Issues
 
