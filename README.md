@@ -31,7 +31,7 @@ Now to setup:
 
     virtualenv env
     source env/bin/activate
-    pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi python-dateutil setuptools==28.8.0 cwl-runner cwltool==1.0.20161114152756 schema-salad==1.18.20161005190847 avro==1.8.1 typing
+    pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi python-dateutil setuptools==28.8.0 cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1 typing
 
 Alternatively, you may want to use Conda, see [here](http://conda.pydata.org/docs/_downloads/conda-pip-virtualenv-translator.html)
  [here](http://conda.pydata.org/docs/test-drive.html), and [here](http://kylepurdon.com/blog/using-continuum-analytics-conda-as-a-replacement-for-virtualenv-pyenv-and-more.html)
@@ -73,7 +73,7 @@ Build the docker image:
     mkdir /datastore; chown ubuntu:ubuntu /datastore/
     # local execution
     TMPDIR=/datastore dockstore tool launch --entry Dockstore.cwl --local-entry --json Dockstore.my.json
-    # as root in /datastore 
+    # as root in /datastore
     TMPDIR=/datastore dockstore tool launch --entry ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl --local-entry --json ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.my.json
     # execute published on dockstore
     dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.8 --json Dockstore.my.json
@@ -92,6 +92,8 @@ NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPA
 Sample:
 
     dockstore tool launch --entry quay.io/ucsc-cgl/dockstore-tool-runner:1.0.8 --json Docstore.json
+    # Locally
+    dockstore tool launch --entry Dockstore.cwl --local-entry --json Dockstore.json
 
 ## Known Issues
 
