@@ -47,6 +47,12 @@ Unfortunately, we need to patch `cwltool` so we can properly handle calling nest
 
     patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < job.patch
 
+### Install Dockstore CLI
+
+Take a look at http://dockstore.org and go through the onboarding process.
+
+That being said, this particular tool is designed to work with Dockstore CLI 1.0.1.  A copy is located in [dockstore](Dockstore/dockstore) so you can make sure you're using the version that matches the version of cwltool you patched above.
+
 ### Redwood Client
 
 You will need a copy of the Redwood client (assuming you are calling the tool outside of docker/dockstore), you can download it from [here](https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/ucsc-storage-client.tar.gz).  You will need a token to upload/download data as well.  This assumes you're pulling/pushing to Redwood at UCSC.  If not, you don't need the client or token (instead, for example, you'll pull/push data to S3).
