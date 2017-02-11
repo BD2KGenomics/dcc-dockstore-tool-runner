@@ -1,32 +1,10 @@
 {
-    "fastq_file": [
-        {
-        "class": "File",
-        "path": "redwood://storage2.ucsc-cgl.org/8ebdb03a-3c99-5f32-811c-9d74b88151ec/2eadcc65-44af-527c-a1a7-22c3a55d736e/ERR030886_1.fastq.gz"
-        },
-        {
-        "class": "File",
-        "path": "redwood://storage2.ucsc-cgl.org/8ebdb03a-3c99-5f32-811c-9d74b88151ec/834523f3-7ddf-5086-a173-108060aeee77/ERR030886_2.fastq.gz"
-        }
-    ],
-    "report_files": [
-        {
-            "class": "File",
-            "path": "./tmp/ERR030886_2_fastqc.html"
-        },
-        {
-            "class": "File",
-            "path": "./tmp/ERR030886_1_fastqc.html"
-        }
-    ],
-    "zipped_files": [
-        {
-            "class": "File",
-            "path": "./tmp/ERR030886_2_fastqc.zip"
-        },
-        {
-            "class": "File",
-            "path": "./tmp/ERR030886_1_fastqc.zip"
-        }
-    ]
+	"fastq_files": [{
+		"class": "File",
+		"path": "redwood://storage.ucsc-cgl.org/fb3dd85d-367e-5b8d-9929-95164089d10f/73f23625-8e55-5408-9f4e-a2ded840a65d/NA12878-NGv3-LAB1360-A_1.fastq.gz"
+	}],
+	"zipped_file": {
+		"class": "File",
+		"path": "/tmp/fastqc_reports.tar.gz"
+	}
 }
