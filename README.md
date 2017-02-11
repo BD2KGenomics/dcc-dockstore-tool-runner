@@ -57,6 +57,17 @@ That being said, this particular tool is designed to work with Dockstore CLI 1.0
 
 You will need a copy of the Redwood client (assuming you are calling the tool outside of docker/dockstore), you can download it from [here](https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/ucsc-storage-client.tar.gz).  You will need a token to upload/download data as well.  This assumes you're pulling/pushing to Redwood at UCSC.  If not, you don't need the client or token (instead, for example, you'll pull/push data to S3).
 
+### Make a Temp Dir
+
+So the dcc-dockstore-tool-runner is a Dockstore-based tool that calls another Dockstore-based tool.  This is a complex thing, since it means we need to 1) patch CWLtools to consistently pass in the Docker socket and 2) a common shared data path used by the nested containers.  The patch hardcodes this shared location to be `/datastore` so please create that before running these tools.  
+
+    sudo mkdir /datastore
+    sudo chmod a+rwx /datastore
+
+If you're on a mac, make sure you allow Docker to mount this otherwise you'll see an error like:
+
+![docs/mac_mount.png](docs/mac_mount.png)
+
 ## Testing
 
 Lowest level to highest level.  The Dockstore CLI pointed to the released version of this tool is the way most users will call this.

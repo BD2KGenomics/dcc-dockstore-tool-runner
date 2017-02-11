@@ -3,7 +3,7 @@ from __future__ import print_function, division
 
 
 """
-    author Brian O'Conner
+    author Brian O'Connor
     broconno@ucsc.edu
 
     author Walt Shands
