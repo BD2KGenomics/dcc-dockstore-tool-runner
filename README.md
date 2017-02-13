@@ -64,6 +64,8 @@ So the dcc-dockstore-tool-runner is a Dockstore-based tool that calls another Do
     sudo mkdir /datastore
     sudo chmod a+rwx /datastore
 
+You should make sure /datastore is a large volume if you intend to work with large inputs/outputs.
+
 If you're on a mac, make sure you allow Docker to mount this otherwise you'll see an error like:
 
 ![docs/mac_mount.png](docs/mac_mount.png)
@@ -77,7 +79,7 @@ Lowest level to highest level.  The Dockstore CLI pointed to the released versio
 The command below will download samples from Redwood, run fastqc from Dockstore on two fastq files, and then upload the results back to a Redwood storage system.  This is a real file and requires controlled access and a token to work.  You need to have cwltool installed/patched, Docker installed.  See above.
 
     # example with real files
-    python DockstoreRunner.py --redwood-path `pwd`/ucsc-storage-client --redwood-token `cat accessToken` --redwood-host storage.ucsc-cgl.org --json-encoded ew0KCSJmYXN0cV9maWxlcyI6IFt7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UudWNzYy1jZ2wub3JnL2ZiM2RkODVkLTM2N2UtNWI4ZC05OTI5LTk1MTY0MDg5ZDEwZi83M2YyMzYyNS04ZTU1LTU0MDgtOWY0ZS1hMmRlZDg0MGE2NWQvTkExMjg3OC1OR3YzLUxBQjEzNjAtQV8xLmZhc3RxLmd6Ig0KCX1dLA0KCSJ6aXBwZWRfZmlsZSI6IHsNCgkJImNsYXNzIjogIkZpbGUiLA0KCQkicGF0aCI6ICIvdG1wL2Zhc3RxY19yZXBvcnRzLnRhci5neiINCgl9DQp9 --docker-uri quay.io/briandoconnor/fastqc:0.11.5 --dockstore-url https://dockstore.org/containers/quay.io/briandoconnor/fastqc --workflow-type sequence_upload_qc_report --parent-uuid d2545c4e-dd7d-5a07-b598-e9acba87228f --vm-instance-type m4.4xlarge --vm-region us-west-2 --vm-instance-cores 16 --vm-instance-mem-gb 64 --vm-location aws --tmpdir <path with lots of storage>
+    python DockstoreRunner.py --redwood-path `pwd`/ucsc-storage-client --redwood-token `cat accessToken` --redwood-host storage.ucsc-cgl.org --json-encoded ew0KCSJmYXN0cV9maWxlcyI6IFt7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UudWNzYy1jZ2wub3JnL2ZiM2RkODVkLTM2N2UtNWI4ZC05OTI5LTk1MTY0MDg5ZDEwZi83M2YyMzYyNS04ZTU1LTU0MDgtOWY0ZS1hMmRlZDg0MGE2NWQvTkExMjg3OC1OR3YzLUxBQjEzNjAtQV8xLmZhc3RxLmd6Ig0KCX1dLA0KCSJ6aXBwZWRfZmlsZSI6IHsNCgkJImNsYXNzIjogIkZpbGUiLA0KCQkicGF0aCI6ICIvdG1wL2Zhc3RxY19yZXBvcnRzLnRhci5neiINCgl9DQp9 --docker-uri quay.io/briandoconnor/fastqc:0.11.5 --dockstore-url https://dockstore.org/containers/quay.io/briandoconnor/fastqc --workflow-type sequence_upload_qc_report --parent-uuid d2545c4e-dd7d-5a07-b598-e9acba87228f --vm-instance-type m4.4xlarge --vm-region us-west-2 --vm-instance-cores 16 --vm-instance-mem-gb 64 --vm-location aws --tmpdir /datastore
 
 This encoded string corresponds to the contents of `sample_fastqc.json`.
 
@@ -89,7 +91,7 @@ This may be useful for debugging, it's one layer above calling the python script
 
 NOTE: THE ENVIRONMENT VARIABLE TMPDIR MUST BE SET TO A DIRECTORY WITH ENOUGH SPACE TO HOLD INPUT, OUTPUT AND INTERMEDIATE FILES. Otherwise cwltool will use /VAR/SPOOL/CWL by default which may not have enough space.
 
-    cwltool --debug --enable-dev --non-strict --enable-net  <path to>/Dockstore.cwl --redwood-path `pwd`/ucsc-storage-client --redwood-token `cat accessToken` --redwood-host storage.ucsc-cgl.org --json-encoded  ew0KCSJmYXN0cV9maWxlcyI6IFt7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UudWNzYy1jZ2wub3JnL2ZiM2RkODVkLTM2N2UtNWI4ZC05OTI5LTk1MTY0MDg5ZDEwZi83M2YyMzYyNS04ZTU1LTU0MDgtOWY0ZS1hMmRlZDg0MGE2NWQvTkExMjg3OC1OR3YzLUxBQjEzNjAtQV8xLmZhc3RxLmd6Ig0KCX1dLA0KCSJ6aXBwZWRfZmlsZSI6IHsNCgkJImNsYXNzIjogIkZpbGUiLA0KCQkicGF0aCI6ICIvdG1wL2Zhc3RxY19yZXBvcnRzLnRhci5neiINCgl9DQp9 --dockstore-uri quay.io/briandoconnor/fastqc:0.11.5 --parent-uuid d2545c4e-dd7d-5a07-b598-e9acba87228f --tmpdir <path with lots of storage>
+    cwltool --debug --enable-dev --non-strict --enable-net  <path to>/Dockstore.cwl --redwood-path `pwd`/ucsc-storage-client --redwood-token `cat accessToken` --redwood-host storage.ucsc-cgl.org --json-encoded  ew0KCSJmYXN0cV9maWxlcyI6IFt7DQoJCSJjbGFzcyI6ICJGaWxlIiwNCgkJInBhdGgiOiAicmVkd29vZDovL3N0b3JhZ2UudWNzYy1jZ2wub3JnL2ZiM2RkODVkLTM2N2UtNWI4ZC05OTI5LTk1MTY0MDg5ZDEwZi83M2YyMzYyNS04ZTU1LTU0MDgtOWY0ZS1hMmRlZDg0MGE2NWQvTkExMjg3OC1OR3YzLUxBQjEzNjAtQV8xLmZhc3RxLmd6Ig0KCX1dLA0KCSJ6aXBwZWRfZmlsZSI6IHsNCgkJImNsYXNzIjogIkZpbGUiLA0KCQkicGF0aCI6ICIvdG1wL2Zhc3RxY19yZXBvcnRzLnRhci5neiINCgl9DQp9 --dockstore-uri quay.io/briandoconnor/fastqc:0.11.5 --parent-uuid d2545c4e-dd7d-5a07-b598-e9acba87228f --tmpdir /datastore
 
 ### Testing Via Dockstore CLI
 
