@@ -454,7 +454,7 @@ class DockstoreRunner:
         self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
-        cmd = "java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt" % (self.redwood_path, self.redwood_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
+        cmd = "java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt" % (self.redwood_path, self.redwood_metadata_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
         self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
         print("Staging metadata.json to be the return file")
