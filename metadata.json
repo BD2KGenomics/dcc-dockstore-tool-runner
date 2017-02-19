@@ -1,7 +1,7 @@
 
 {
    "version" : "1.0.0",
-   "timestamp" : "2017-02-19T21:31:12.321933",
+   "timestamp" : "2017-02-19T22:46:44.013930",
    "parent_uuids" : [
       "d2545c4e-dd7d-5a07-b598-e9acba87228f"
    ],
@@ -9,7 +9,7 @@
    "workflow_name" : "quay.io/briandoconnor/fastqc",
    "workflow_version" : "0.11.5",
    "analysis_type" : "sequence_upload_qc_report",
-   "bundle_uuid" : "fb74a2f3-2c79-4528-a16d-8341d7a0d10a",
+   "bundle_uuid" : "8c334a94-5b94-46ac-98ee-6c95e7446d70",
    "workflow_params" : {
 
    },
@@ -17,8 +17,8 @@
    {
               "file_path": "fastqc_reports.tar.gz",
               "file_type": "gz",
-              "file_checksum": "sha1$8c42998e77325ed799f845d88237a9319e83b7f5",
-              "file_size": 644120
+              "file_checksum": "sha1$0f950971ff8352e6f91127c9f8ca01258ce3bffb",
+              "file_size": 644116
             }
             
    ],
@@ -31,19 +31,19 @@
    "timing_metrics" : {
       "step_timing" : {
          "download" : {
-            "stop_time_utc" : "2017-02-19T21:25:35.218272",
-            "walltime_seconds" : 5,
-            "start_time_utc" : "2017-02-19T21:25:41.155696"
+            "stop_time_utc" : "2017-02-19T22:41:14.289183",
+            "walltime_seconds" : 10,
+            "start_time_utc" : "2017-02-19T22:41:24.935347"
          },
          "tool_run" : {
-            "stop_time_utc" : "2017-02-19T21:25:41.155791",
-            "walltime_seconds" : 331,
-            "start_time_utc" : "2017-02-19T21:31:12.321873"
+            "stop_time_utc" : "2017-02-19T22:41:24.935411",
+            "walltime_seconds" : 319,
+            "start_time_utc" : "2017-02-19T22:46:44.013903"
          }
       },
-      "overall_stop_time_utc" : "2017-02-19T21:31:12.321933",
-      "overall_start_time_utc" : "2017-02-19T21:25:35.218272",
-      "overall_walltime_seconds" : 337
+      "overall_stop_time_utc" : "2017-02-19T22:46:44.013930",
+      "overall_start_time_utc" : "2017-02-19T22:41:14.289183",
+      "overall_walltime_seconds" : 329
    },
    "host_metrics" : {
       "vm_instance_type" : "m4.4xlarge",
