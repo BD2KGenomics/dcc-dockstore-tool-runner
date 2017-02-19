@@ -22,7 +22,7 @@ RUN apt-get update && apt-get install --yes \
     build-essential
 
 RUN pip install --upgrade pip
-RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver luigi
+RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver
 
 #install cwltool in the container
 #use the version required by dockstore
@@ -87,4 +87,3 @@ ENV DOCKSTORE_ROOT 1
 #becuase ubuntu is not a member of the host's docker.sock docker group
 #and there is no way to set this up at build time
 USER root
-#USER ubuntu
