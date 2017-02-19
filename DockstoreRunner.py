@@ -85,7 +85,7 @@ class DockstoreRunner:
         # run
         self.run()
 
-    def run_command(self, command_string, max_retries, delay_in_seconds, ignore_errors=False):
+    def run_command(self, command_string, max_retries, delay_in_seconds, ignore_errors=False, cwd='.'):
         print(command_string)
         #command must be formatted as a list of strings; e.g.
         #command = ["dockstore", "tool", "launch", "--debug", "--entry", self.docker_uri, "--json", "transformed_json_path"]
@@ -101,7 +101,7 @@ class DockstoreRunner:
             print("\nDockstore tool runner executing command: " + command_string)
             print("Attempt number "+str(retry_number+1)+" of "+str(max_retries))
             try:
-                subprocess.check_call(command)
+                subprocess.check_call(command, cwd=cwd)
             except subprocess.CalledProcessError as e:
                 #If we get here then the called command return code was non zero
                 print("\nERROR!!! DOCKSTORE TOOL RUNNER CMD:" + command_string + " FAILED !!!", file=sys.stderr)
@@ -149,13 +149,13 @@ class DockstoreRunner:
         # going to need to read from datastore
         # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
         result = []
-        path = 'datastore'
+        path = self.tmp_dir
         #files = sorted(os.listdir(path), key=os.path.getmtime)
         mtime = lambda f: os.stat(os.path.join(path, f)).st_mtime
         files = list(sorted(os.listdir(path), key=mtime))
         newest = files[-1]
-        self.working_dir = 'datastore/'+newest
-        path = 'datastore/'+newest+'/outputs/cwltool.stdout.txt'
+        self.working_dir = self.tmp_dir+'/'+newest
+        path = self.working_dir+'/outputs/cwltool.stdout.txt'
         with open(path) as data_file:
             parsed_json = json.load(data_file)
         for key, value in parsed_json.iteritems():
@@ -346,7 +346,7 @@ class DockstoreRunner:
 
         print("Calling Dockstore to launch a Dockstore tool")
         cmd = "dockstore tool launch --debug --entry "+self.docker_uri+" --json "+transformed_json_path
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS, cwd=self.tmp_dir)
 
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()

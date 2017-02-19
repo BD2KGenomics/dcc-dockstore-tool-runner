@@ -1,47 +1,29 @@
 
 {
    "version" : "1.0.0",
-   "timestamp" : "2016-11-19T06:01:00.549378",
+   "timestamp" : "2017-02-19T21:31:12.321933",
    "parent_uuids" : [
-      "id"
+      "d2545c4e-dd7d-5a07-b598-e9acba87228f"
    ],
-   "workflow_url" : "https://dockstore.org/containers/quay.io/wshands/fastqc",
-   "workflow_name" : "quay.io/wshands/fastqc",
-   "workflow_version" : "latest",
-   "analysis_type" : "qc",
-   "bundle_uuid" : "3e0d390f-40ca-4c2b-b789-5594042d5fd1",
+   "workflow_url" : "https://dockstore.org/containers/quay.io/briandoconnor/fastqc",
+   "workflow_name" : "quay.io/briandoconnor/fastqc",
+   "workflow_version" : "0.11.5",
+   "analysis_type" : "sequence_upload_qc_report",
+   "bundle_uuid" : "fb74a2f3-2c79-4528-a16d-8341d7a0d10a",
    "workflow_params" : {
 
    },
    "workflow_outputs" : [
    {
-              "file_path": "ERR030886_2_fastqc.zip",
-              "file_type": "zip",
-              "file_checksum": "sha1$f57bc5f399b216d159df478b1cecea0a75c3cd10",
-              "file_size": 494406
-            }
-            ,{
-              "file_path": "ERR030886_1_fastqc.zip",
-              "file_type": "zip",
-              "file_checksum": "sha1$27fa7c14318ecd7852ca8ecdf96ca6b83fcd4932",
-              "file_size": 425451
-            }
-            ,{
-              "file_path": "ERR030886_2_fastqc.html",
-              "file_type": "html",
-              "file_checksum": "sha1$6bb71b3f39c66f5e8664003312b274c53e9e2160",
-              "file_size": 391261
-            }
-            ,{
-              "file_path": "ERR030886_1_fastqc.html",
-              "file_type": "html",
-              "file_checksum": "sha1$d8645a7fe676245481971a7592130f34a6492397",
-              "file_size": 349721
+              "file_path": "fastqc_reports.tar.gz",
+              "file_type": "gz",
+              "file_checksum": "sha1$8c42998e77325ed799f845d88237a9319e83b7f5",
+              "file_size": 644120
             }
             
    ],
    "workflow_inputs" :
-        [{"file_storage_bundle_files": [{"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_1.fastq.gz", "file_storage_id": "2eadcc65-44af-527c-a1a7-22c3a55d736e"}, {"file_type": "fastq.gz", "file_name": "fastq_file", "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec", "file_path": "ERR030886_2.fastq.gz", "file_storage_id": "834523f3-7ddf-5086-a173-108060aeee77"}], "file_storage_bundle_id": "8ebdb03a-3c99-5f32-811c-9d74b88151ec"}, {"file_storage_bundle_files": [{"file_type": "zip", "file_name": "zipped_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_2_fastqc.zip", "file_storage_id": "tmp"}, {"file_type": "zip", "file_name": "zipped_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_1_fastqc.zip", "file_storage_id": "tmp"}, {"file_type": "html", "file_name": "report_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_2_fastqc.html", "file_storage_id": "tmp"}, {"file_type": "html", "file_name": "report_files", "file_storage_bundle_id": ".", "file_path": "ERR030886_1_fastqc.html", "file_storage_id": "tmp"}], "file_storage_bundle_id": "."}]
+        [{"file_storage_bundle_files": [{"file_type": "fastq.gz", "file_name": "fastq_files", "file_storage_bundle_id": "fb3dd85d-367e-5b8d-9929-95164089d10f", "file_path": "NA12878-NGv3-LAB1360-A_1.fastq.gz", "file_storage_id": "73f23625-8e55-5408-9f4e-a2ded840a65d"}], "file_storage_bundle_id": "fb3dd85d-367e-5b8d-9929-95164089d10f"}]
    ,
 
    "qc_metrics" : {
@@ -49,19 +31,19 @@
    "timing_metrics" : {
       "step_timing" : {
          "download" : {
-            "stop_time_utc" : "2016-11-19T06:00:52.477083",
-            "walltime_seconds" : 8,
-            "start_time_utc" : "2016-11-19T06:01:00.549311"
+            "stop_time_utc" : "2017-02-19T21:25:35.218272",
+            "walltime_seconds" : 5,
+            "start_time_utc" : "2017-02-19T21:25:41.155696"
          },
          "tool_run" : {
-            "stop_time_utc" : "2016-11-19T06:01:00.549366",
-            "walltime_seconds" : 0,
-            "start_time_utc" : "2016-11-19T06:01:00.549376"
+            "stop_time_utc" : "2017-02-19T21:25:41.155791",
+            "walltime_seconds" : 331,
+            "start_time_utc" : "2017-02-19T21:31:12.321873"
          }
       },
-      "overall_stop_time_utc" : "2016-11-19T06:01:00.549378",
-      "overall_start_time_utc" : "2016-11-19T06:00:52.477083",
-      "overall_walltime_seconds" : 8
+      "overall_stop_time_utc" : "2017-02-19T21:31:12.321933",
+      "overall_start_time_utc" : "2017-02-19T21:25:35.218272",
+      "overall_walltime_seconds" : 337
    },
    "host_metrics" : {
       "vm_instance_type" : "m4.4xlarge",
