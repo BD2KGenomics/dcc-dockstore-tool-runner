@@ -41,6 +41,8 @@ class DockstoreRunner:
         parser.add_argument('--redwood-path', default='/usr/local/ucsc-storage-client', required=False)
         parser.add_argument('--redwood-token', default='token-UUID-dummy-value', required=True)
         parser.add_argument('--redwood-host', default='storage.ucsc-cgl.org', required=True)
+        parser.add_argument('--redwood-auth-host', default='undefined', required=False)
+        parser.add_argument('--redwood-metadata-host', default='undefined', required=False)
         parser.add_argument('--json-encoded', default='e30=', required=True)
         parser.add_argument('--docker-uri', default='quay.io/wshands/fastqc:latest', required=True)
         parser.add_argument('--dockstore-url', default='https://dockstore.org/containers/quay.io/wshands/fastqc', required=True)
@@ -62,6 +64,12 @@ class DockstoreRunner:
         args = parser.parse_args()
         self.redwood_path = args.redwood_path
         self.redwood_host = args.redwood_host
+        self.redwood_auth_host = args.redwood_auth_host
+        if self.redwood_auth_host == 'undefined':
+            self.redwood_auth_host = self.redwood_host
+        self.redwood_metadata_host = args.redwood_metadata_host
+        if self.redwood_metadata_host == 'undefined':
+            self.redwood_metadata_host = self.redwood_host
         self.redwood_token = args.redwood_token
         self.json_encoded = args.json_encoded
         self.docker_uri = args.docker_uri
@@ -149,12 +157,12 @@ class DockstoreRunner:
         # going to need to read from datastore
         # FIXME: if multiple instances of this script run at the same time it will get confused out the output dir
         result = []
-        path = self.tmp_dir
+        path = self.tmp_dir+"/datastore"
         #files = sorted(os.listdir(path), key=os.path.getmtime)
         mtime = lambda f: os.stat(os.path.join(path, f)).st_mtime
         files = list(sorted(os.listdir(path), key=mtime))
         newest = files[-1]
-        self.working_dir = self.tmp_dir+'/'+newest
+        self.working_dir = self.tmp_dir+'/datastore/'+newest
         path = self.working_dir+'/outputs/cwltool.stdout.txt'
         with open(path) as data_file:
             parsed_json = json.load(data_file)
@@ -310,7 +318,7 @@ class DockstoreRunner:
                 #create list of individual command 'words' for input to run commmand function
                 self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
-                cmd = "java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
+                cmd = "java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_metadata_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
                 #create list of individual command 'words' for input to run commmand function
                 self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
