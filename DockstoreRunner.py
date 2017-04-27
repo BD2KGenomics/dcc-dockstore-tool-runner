@@ -327,6 +327,10 @@ class DockstoreRunner:
 
     ''' Kick off main analysis '''
     def run(self):
+        #Assigning the environmental variables for REDWOOD ENDPOINT (here refered as redwood host),
+        #and for the ACCESS_TOKEN (here referred to as redwood token)
+        os.environ["ACCESS_TOKEN"] = self.redwood_token
+        os.environ["REDWOOD_ENDPOINT"] = self.redwood_host
         print("** DOWNLOAD **")
         d_utc_datetime = datetime.utcnow()
         d_start = time.time()
