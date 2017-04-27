@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM quay.io/ucsc_cgl/redwood-client:1.1.1
 
 MAINTAINER Walt Shands jshands@ucsc.edu
 
@@ -8,7 +8,6 @@ USER root
 
 # Install OpenJDK JRE, curl, python, python pip, and the docker client
 RUN apt-get update && apt-get install --yes \
-    openjdk-8-jre \
     curl \
     wget \
     python \
@@ -47,9 +46,6 @@ COPY main.patch /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
 COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
-
-# install the Redwood client code
-RUN wget https://s3-us-west-2.amazonaws.com/beni-dcc-storage-dev/20161216_ucsc-storage-client.tar.gz && mv 20161216_ucsc-storage-client.tar.gz /usr/local/ && cd /usr/local && tar zxf 20161216_ucsc-storage-client.tar.gz && rm 20161216_ucsc-storage-client.tar.gz && chmod -R a+rx ucsc-storage-client
 
 #Add ubuntu user and group
 RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
