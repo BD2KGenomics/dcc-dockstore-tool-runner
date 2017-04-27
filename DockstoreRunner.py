@@ -40,7 +40,7 @@ class DockstoreRunner:
         parser = argparse.ArgumentParser(description='Downloads, runs tool via Dockstore, then uploads results.')
         parser.add_argument('--redwood-path', default='/usr/local/ucsc-storage-client', required=False)
         parser.add_argument('--redwood-token', default='token-UUID-dummy-value', required=True)
-        parser.add_argument('--redwood-host', default='storage.ucsc-cgl.org', required=True)
+        parser.add_argument('--redwood-host', default='redwood.io', required=True)
         parser.add_argument('--redwood-auth-host', default='undefined', required=False)
         parser.add_argument('--redwood-metadata-host', default='undefined', required=False)
         parser.add_argument('--json-encoded', default='e30=', required=True)
@@ -318,7 +318,7 @@ class DockstoreRunner:
                 #create list of individual command 'words' for input to run commmand function
                 self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
-                cmd = "java -Djavax.net.ssl.trustStore="+self.redwood_path+"/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://"+self.redwood_metadata_host+":8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://"+self.redwood_host+":5431 -DaccessToken="+self.redwood_token+" -jar "+self.redwood_path+"/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar download --output-dir "+self.tmp_dir+" --object-id "+file_uuid+" --output-layout bundle"
+                cmd = "icgc-storage-client download --output-dir {} --object-id {} --output-layout bundle".format(self.tmp_dir, file_uuid)
                 #create list of individual command 'words' for input to run commmand function
                 self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
@@ -450,11 +450,11 @@ class DockstoreRunner:
         self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
         print("Registering uploads")
-        cmd = "java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dserver.baseUrl=https://%s:8444 -DaccessToken=%s -jar %s/dcc-metadata-client-0.0.16-SNAPSHOT/lib/dcc-metadata-client.jar -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.redwood_path, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
         self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
-        cmd = "java -Djavax.net.ssl.trustStore=%s/ssl/cacerts -Djavax.net.ssl.trustStorePassword=changeit -Dmetadata.url=https://%s:8444 -Dmetadata.ssl.enabled=true -Dclient.ssl.custom=false -Dstorage.url=https://%s:5431 -DaccessToken=%s -jar %s/icgc-storage-client-1.0.14-SNAPSHOT/lib/icgc-storage-client.jar upload --force --manifest %s/manifest/manifest.txt" % (self.redwood_path, self.redwood_metadata_host, self.redwood_host, self.redwood_token, self.redwood_path, self.tmp_dir)
+        cmd = "icgc-storage-client upload --force --manifest %s/manifest/manifest.txt" % (self.tmp_dir)
         self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
 
         print("Staging metadata.json to be the return file")
