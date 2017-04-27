@@ -34,8 +34,9 @@ import sys
 class DockstoreRunner:
 
     def __init__(self):
-        self.MAX_RETRIES = 3
+        self.MAX_ATTEMPTS = 3
         self.DELAY_IN_SECONDS = 30
+        self.MAX_PIPELINE_ATTEMPTS= 1
 
         parser = argparse.ArgumentParser(description='Downloads, runs tool via Dockstore, then uploads results.')
         parser.add_argument('--redwood-path', default='/usr/local/ucsc-storage-client', required=False)
@@ -93,21 +94,21 @@ class DockstoreRunner:
         # run
         self.run()
 
-    def run_command(self, command_string, max_retries, delay_in_seconds, ignore_errors=False, cwd='.'):
+    def run_command(self, command_string, max_attempts, delay_in_seconds, ignore_errors=False, cwd='.'):
         print(command_string)
         #command must be formatted as a list of strings; e.g.
         #command = ["dockstore", "tool", "launch", "--debug", "--entry", self.docker_uri, "--json", "transformed_json_path"]
         command = command_string.split()
         print("command list object:")
         print(command)
-        for retry_number in range(max_retries):
-            if retry_number > 0:
+        for attempt_number in range(1, max_attempts+1):
+            if attempt_number > 1:
                 #we are about to retry the command, but sleep for a number of seconds before retrying
                 print("Waiting for "+str(delay_in_seconds)+" seconds before retrying")
                 time.sleep(delay_in_seconds)
 
             print("\nDockstore tool runner executing command: " + command_string)
-            print("Attempt number "+str(retry_number+1)+" of "+str(max_retries))
+            print("Attempt number "+str(attempt_number)+" of "+str(max_attempts))
             try:
                 subprocess.check_call(command, cwd=cwd)
             except subprocess.CalledProcessError as e:
@@ -136,10 +137,10 @@ class DockstoreRunner:
         #the try: else: statement that indicates the command was successful
         else:
             if not ignore_errors:
-                print("Exiting Dockstore tool runner due to call error in command "+command_string+" after "+str(max_retries)+" attempts", file=sys.stderr)
+                print("Exiting Dockstore tool runner due to call error in command "+command_string+" after "+str(max_attempts)+" attempts", file=sys.stderr)
                 sys.exit(return_code)
             else:
-                print ("There were errors in the call to command "+command_string+" after "+str(max_retries)+" attempts but ignore_errors=True so ignoring ", file=sys.stderr)
+                print ("There were errors in the call to command "+command_string+" after "+str(max_attempts)+" attempts but ignore_errors=True so ignoring ", file=sys.stderr)
 
     ''' output files filled into a dict '''
     def fill_in_file_dict(self, file_map, parsed_json):
@@ -316,11 +317,11 @@ class DockstoreRunner:
 
                 cmd = "mkdir -p "+self.tmp_dir
                 #create list of individual command 'words' for input to run commmand function
-                self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+                self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
                 cmd = "icgc-storage-client download --output-dir {} --object-id {} --output-layout bundle".format(self.tmp_dir, file_uuid)
                 #create list of individual command 'words' for input to run commmand function
-                self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+                self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         return(self.tmp_dir+'/updated_sample.json')
 
@@ -350,11 +351,11 @@ class DockstoreRunner:
         #installed in /root in the Dockerfile
         print("Installing Dockstore client at root if this is running inside our Docker image")
         cmd = "cp -R /home/ubuntu/.dockstore ./"
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS, True)
+        self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS, True)
 
         print("Calling Dockstore to launch a Dockstore tool")
         cmd = "dockstore tool launch --debug --entry "+self.docker_uri+" --json "+transformed_json_path
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS, cwd=self.tmp_dir)
+        self.run_command(cmd, self.MAX_PIPELINE_ATTEMPTS, self.DELAY_IN_SECONDS, cwd=self.tmp_dir)
 
         t_end = time.time()
         t_utc_datetime_end = datetime.utcnow()
@@ -447,19 +448,19 @@ class DockstoreRunner:
 
         print("Creating upload directories")
         cmd = "mkdir -p %s/upload/%s %s/manifest" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+        self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Registering uploads")
         cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+        self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
         cmd = "icgc-storage-client upload --force --manifest %s/manifest/manifest.txt" % (self.tmp_dir)
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+        self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Staging metadata.json to be the return file")
         cmd = 'cp '+self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json ./'
-        self.run_command(cmd, self.MAX_RETRIES, self.DELAY_IN_SECONDS)
+        self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
 # run the class
 if __name__ == '__main__':
