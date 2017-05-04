@@ -5,7 +5,7 @@ id: "dockstore-tool-runner"
 label: "A Dockstore tool that can call download from Redwood, call another Dockstore tool, and then upload back to Redwood."
 cwlVersion: v1.0
 doc: |
-    ![build_status](https://quay.io/ucsc_cgl/DockstoreRunner/status)
+    ![build_status](https://quay.io/repository/ucsc_cgl/dockstore-tool-runner/status)
     A Docker container from which Dockstore containers may be launched.
     ```
     Usage:
@@ -24,7 +24,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.0"
+    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.8"
 hints:
   - class: ResourceRequirement
     coresMin: 1
