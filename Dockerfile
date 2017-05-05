@@ -4,7 +4,9 @@ MAINTAINER Walt Shands jshands@ucsc.edu
 
 #patch logback.xml so the storage client writes its log files to /tmp because other
 #directories are readonly when cwltool runs the container
-RUN sed -i 's~<property name=\"log.dir\" value=\"${logging.path:-/tmp/icgc-storage-client/logs}" />~<property name=\"log.dir\" value=\"/tmp/icgc-storage-client/logs\" />~g' /dcc/icgc-storage-client/conf/logback.xml
+RUN sed -i 's~<property name=\"log.dir\" value=\"${logging.path:-/tmp/icgc-storage-client/logs}\" />~<property name=\"log.dir\" value=\"/tmp/icgc-storage-client/logs\" />~g' /dcc/icgc-storage-client/conf/logback.xml
+
+RUN sed -i 's~<property name=\"log.dir\" value=\"${LOG_PATH:-../logs}\" />~<property name=\"log.dir\" value=\"/tmp/dcc-metadata-client/logs\" />~g' /dcc/dcc-metadata-client/conf/logback.xml
 
 
 WORKDIR ./
