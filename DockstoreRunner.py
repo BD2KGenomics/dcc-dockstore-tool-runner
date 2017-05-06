@@ -26,6 +26,8 @@ import base64
 import os
 from urllib import urlopen
 from uuid import uuid4
+import logging
+import hashlib
 
 import os
 import sys
@@ -325,6 +327,73 @@ class DockstoreRunner:
 
         return(self.tmp_dir+'/updated_sample.json')
 
+    def mkdir_p(path):
+        """
+        mkdir -p
+        """
+        try:
+            os.makedirs(path)
+        except OSError as exec:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise
+        return None
+
+    def md5sum(filename):
+        with open(filename, mode='rb') as f:
+            d = hashlib.md5()
+            for buf in iter(partial(f.read, 128), b''):
+                d.update(buf)
+            return d.hexdigest()
+
+    def add_to_registration(registration, bundle_id, project, file_path,
+                        controlled_access):
+        access = 'controlled' if controlled_access else 'open'
+        registration.write('{}\t{}\t{}\t{}\t{}\n'.format(
+            bundle_id, project, file_path, md5sum(file_path), access))
+          
+    def register_manifest(redwood_registration_file, metadata_output_dir):
+        redwood_upload_manifest_dir = "redwoodUploadManifest"
+        counts = {}
+        redwood_upload_manifest = None
+        redwood_registration_manifest = os.path.join(metadata_output_dir,
+            redwood_registration_file)
+        with open(redwood_registration_manifest, 'w') as registration:
+            registration.write(
+                'gnos_id\tprogram_code\tfile_path\tfile_md5\taccess\n')
+            for dir_name, subdirs, files in os.walk(redwood_upload_manifest_dir):
+                if dir_name == metadata_output_dir:
+                    continue
+                if len(subdirs) != 0:
+                    continue
+                if "metadata.json" in files:
+                    bundleDirFullPath = os.path.join(os.getcwd(), dir_name)
+                    logging.debug("found bundle directory at %s"
+                                  % (bundleDirFullPath))
+                    counts["bundlesFound"] += 1
+                    bundle_metadata = loadJsonObj(
+                        os.path.join(bundleDirFullPath, "metadata.json"))
+                    program = bundle_metadata["program"].replace(' ', '_')
+                    bundle_uuid = os.path.basename(dir_name)
+                    controlled_access = True
+                    if redwood_upload_manifest is None:
+                        redwood_upload_manifest = os.path.join(
+                            metadata_output_dir, redwood_upload_manifest_dir,
+                            bundle_uuid)
+
+                    #Register upload
+                    for f in files: 
+                        file = os.path.join(dir_name, f)
+                        add_to_registration(registration, bundle_uuid, program,
+                                            file, controlled_access)
+                else:
+                    logging.info("no metadata file found in %s" % dir_name)
+                
+                mkdir_p(os.path.dirname(redwood_upload_manifest))
+                logging.info("counts\t%s" % (json.dumps(counts)))
+        return redwood_registration_manifest, os.path.dirname(redwood_upload_manifest)
+ 
     ''' Kick off main analysis '''
     def run(self):
         #Assigning the environmental variables for REDWOOD ENDPOINT (here refered as redwood host),
@@ -455,11 +524,15 @@ class DockstoreRunner:
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Registering uploads")
-        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+#        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+        #Call method to write manifest.txt to perform the upload
+        metadata_output_dir = "%s/upload/" % (self.tmp_dir)
+        redwood_registration_manifest, redwood_upload_manifest = register_manifest("registation.tsv", metadata_output_dir)
+        cmd = "dcc-metadata-client -o %s/manifest -m {}" % (self.tmp_dir, redwood_registration_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
-        cmd = "icgc-storage-client upload --force --manifest %s/manifest/manifest.txt" % (self.tmp_dir)
+        cmd = "icgc-storage-client upload --force --manifest %s" % (redwood_upload_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Staging metadata.json to be the return file")
