@@ -333,7 +333,7 @@ class DockstoreRunner:
         """
         try:
             os.makedirs(path)
-        except OSError as exec:
+        except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(path):
                 pass
             else:
