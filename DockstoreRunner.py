@@ -351,7 +351,7 @@ class DockstoreRunner:
                         controlled_access):
         access = 'controlled' if controlled_access else 'open'
         registration.write('{}\t{}\t{}\t{}\t{}\n'.format(
-            bundle_id, project, file_path, md5sum(file_path), access))
+            bundle_id, project, file_path, self.md5sum(file_path), access))
           
     def register_manifest(redwood_registration_file, metadata_output_dir):
         redwood_upload_manifest_dir = "redwoodUploadManifest"
@@ -385,12 +385,12 @@ class DockstoreRunner:
                     #Register upload
                     for f in files: 
                         file = os.path.join(dir_name, f)
-                        add_to_registration(registration, bundle_uuid, program,
+                        self.add_to_registration(registration, bundle_uuid, program,
                                             file, controlled_access)
                 else:
                     logging.info("no metadata file found in %s" % dir_name)
                 
-                mkdir_p(os.path.dirname(redwood_upload_manifest))
+                self.mkdir_p(os.path.dirname(redwood_upload_manifest))
                 logging.info("counts\t%s" % (json.dumps(counts)))
         return redwood_registration_manifest, os.path.dirname(redwood_upload_manifest)
  
@@ -527,7 +527,7 @@ class DockstoreRunner:
 #        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
         #Call method to write manifest.txt to perform the upload
         metadata_output_dir = "%s/upload/" % (self.tmp_dir)
-        redwood_registration_manifest, redwood_upload_manifest = register_manifest("registation.tsv", metadata_output_dir)
+        redwood_registration_manifest, redwood_upload_manifest = self.register_manifest("registation.tsv", metadata_output_dir)
         cmd = "dcc-metadata-client -o %s/manifest -m {}" % (self.tmp_dir, redwood_registration_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
