@@ -327,7 +327,7 @@ class DockstoreRunner:
 
         return(self.tmp_dir+'/updated_sample.json')
 
-    def mkdir_p(path):
+    def mkdir_p(self, path):
         """
         mkdir -p
         """
@@ -340,20 +340,20 @@ class DockstoreRunner:
                 raise
         return None
 
-    def md5sum(filename):
+    def md5sum(self, filename):
         with open(filename, mode='rb') as f:
             d = hashlib.md5()
             for buf in iter(partial(f.read, 128), b''):
                 d.update(buf)
             return d.hexdigest()
 
-    def add_to_registration(registration, bundle_id, project, file_path,
+    def add_to_registration(self, registration, bundle_id, project, file_path,
                         controlled_access):
         access = 'controlled' if controlled_access else 'open'
         registration.write('{}\t{}\t{}\t{}\t{}\n'.format(
             bundle_id, project, file_path, self.md5sum(file_path), access))
           
-    def register_manifest(redwood_registration_file, metadata_output_dir):
+    def register_manifest(self, redwood_registration_file, metadata_output_dir):
         redwood_upload_manifest_dir = "redwoodUploadManifest"
         counts = {}
         redwood_upload_manifest = None
@@ -362,7 +362,7 @@ class DockstoreRunner:
         with open(redwood_registration_manifest, 'w') as registration:
             registration.write(
                 'gnos_id\tprogram_code\tfile_path\tfile_md5\taccess\n')
-            for dir_name, subdirs, files in os.walk(redwood_upload_manifest_dir):
+            for dir_name, subdirs, files in os.walk(metadata_output_dir):
                 if dir_name == metadata_output_dir:
                     continue
                 if len(subdirs) != 0:
