@@ -340,6 +340,18 @@ class DockstoreRunner:
                 raise
         return None
 
+    def loadJsonObj(self, fileName):
+        """
+        Load a json object from a file
+        """
+        try:
+            file = open(fileName, "r")
+            object = json.load(file)
+            file.close()
+        except:
+            logging.error("Error loading and parsing {}".format(fileName))
+        return object
+
     def md5sum(self, filename):
         with open(filename, mode='rb') as f:
             d = hashlib.md5()
