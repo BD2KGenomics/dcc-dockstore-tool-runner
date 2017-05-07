@@ -385,7 +385,7 @@ class DockstoreRunner:
                     logging.debug("found bundle directory at %s"
                                   % (bundleDirFullPath))
                     counts["bundlesFound"] += 1
-                    bundle_metadata = loadJsonObj(
+                    bundle_metadata = self.loadJsonObj(
                         os.path.join(bundleDirFullPath, "metadata.json"))
                     program = bundle_metadata["program"].replace(' ', '_')
                     bundle_uuid = os.path.basename(dir_name)
