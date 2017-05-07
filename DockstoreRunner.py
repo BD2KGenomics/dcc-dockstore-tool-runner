@@ -387,7 +387,9 @@ class DockstoreRunner:
                     counts["bundlesFound"] += 1
                     bundle_metadata = self.loadJsonObj(
                         os.path.join(bundleDirFullPath, "metadata.json"))
-                    program = bundle_metadata["program"].replace(' ', '_')
+                    #There is no program in the metadata.json generated. Need to figure out
+                    #how to get that...
+                    #program = bundle_metadata["program"].replace(' ', '_')
                     bundle_uuid = os.path.basename(dir_name)
                     controlled_access = True
                     if redwood_upload_manifest is None:
