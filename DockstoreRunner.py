@@ -356,6 +356,7 @@ class DockstoreRunner:
     def register_manifest(self, redwood_registration_file, metadata_output_dir):
         redwood_upload_manifest_dir = "redwoodUploadManifest"
         counts = {}
+        counts["bundlesFound"] = 0
         redwood_upload_manifest = None
         redwood_registration_manifest = os.path.join(metadata_output_dir,
             redwood_registration_file)
