@@ -24,7 +24,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.10"
+    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.11"
 hints:
   - class: ResourceRequirement
     coresMin: 1
@@ -33,6 +33,12 @@ hints:
     description: "the process requires at least 4G of RAM"
 
 inputs:
+  program_name:
+    type: string
+    doc: "Program to be associated with the uploaded file"
+    inputBinding:
+      prefix: --program-name
+
   redwood_token:
     type: string
     doc: "Token for storage client"
