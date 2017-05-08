@@ -33,6 +33,12 @@ hints:
     description: "the process requires at least 4G of RAM"
 
 inputs:
+  program_name:
+    type: string
+    doc: "Program to be associated with the uploaded file"
+    inputBinding:
+      prefix: --program-name
+
   redwood_token:
     type: string
     doc: "Token for storage client"

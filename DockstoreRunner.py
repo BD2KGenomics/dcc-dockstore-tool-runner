@@ -26,6 +26,8 @@ import base64
 import os
 from urllib import urlopen
 from uuid import uuid4
+import logging
+import hashlib
 
 import os
 import sys
@@ -39,6 +41,7 @@ class DockstoreRunner:
         self.MAX_PIPELINE_ATTEMPTS= 1
 
         parser = argparse.ArgumentParser(description='Downloads, runs tool via Dockstore, then uploads results.')
+        parser.add_argument('--program-name', default='DEV', required=True)
         parser.add_argument('--redwood-path', default='/usr/local/ucsc-storage-client', required=False)
         parser.add_argument('--redwood-token', default='token-UUID-dummy-value', required=True)
         parser.add_argument('--redwood-host', default='redwood.io', required=True)
@@ -63,6 +66,7 @@ class DockstoreRunner:
 
         # get args
         args = parser.parse_args()
+        self.program_name = args.program_name
         self.redwood_path = args.redwood_path
         self.redwood_host = args.redwood_host
         self.redwood_auth_host = args.redwood_auth_host
@@ -325,6 +329,88 @@ class DockstoreRunner:
 
         return(self.tmp_dir+'/updated_sample.json')
 
+    def mkdir_p(self, path):
+        """
+        mkdir -p
+        """
+        try:
+            os.makedirs(path)
+        except OSError as exc:
+            if exc.errno == errno.EEXIST and os.path.isdir(path):
+                pass
+            else:
+                raise
+        return None
+
+    def loadJsonObj(self, fileName):
+        """
+        Load a json object from a file
+        """
+        try:
+            file = open(fileName, "r")
+            object = json.load(file)
+            file.close()
+        except:
+            logging.error("Error loading and parsing {}".format(fileName))
+        return object
+
+    def md5sum(self, filename):
+        with open(filename, mode='rb') as f:
+            d = hashlib.md5()
+            for buf in iter(partial(f.read, 128), b''):
+                d.update(buf)
+            return d.hexdigest()
+
+    def add_to_registration(self, registration, bundle_id, project, file_path,
+                        controlled_access):
+        access = 'controlled' if controlled_access else 'open'
+        registration.write('{}\t{}\t{}\t{}\t{}\n'.format(
+            bundle_id, project, file_path, self.md5sum(file_path), access))
+          
+    def register_manifest(self, redwood_registration_file, metadata_output_dir):
+        redwood_upload_manifest_dir = "redwoodUploadManifest"
+        counts = {}
+        counts["bundlesFound"] = 0
+        redwood_upload_manifest = None
+        redwood_registration_manifest = os.path.join(metadata_output_dir,
+            redwood_registration_file)
+        with open(redwood_registration_manifest, 'w') as registration:
+            registration.write(
+                'gnos_id\tprogram_code\tfile_path\tfile_md5\taccess\n')
+            for dir_name, subdirs, files in os.walk(metadata_output_dir):
+                if dir_name == metadata_output_dir:
+                    continue
+                if len(subdirs) != 0:
+                    continue
+                if "metadata.json" in files:
+                    bundleDirFullPath = os.path.join(os.getcwd(), dir_name)
+                    logging.debug("found bundle directory at %s"
+                                  % (bundleDirFullPath))
+                    counts["bundlesFound"] += 1
+                    #bundle_metadata = self.loadJsonObj(
+                    #    os.path.join(bundleDirFullPath, "metadata.json"))
+                    #There is no program in the metadata.json generated. Need to figure out
+                    #how to get that...
+                    program = self.program_name
+                    bundle_uuid = os.path.basename(dir_name)
+                    controlled_access = True
+                    if redwood_upload_manifest is None:
+                        redwood_upload_manifest = os.path.join(
+                            metadata_output_dir, redwood_upload_manifest_dir,
+                            bundle_uuid)
+
+                    #Register upload
+                    for f in files: 
+                        file = os.path.join(dir_name, f)
+                        self.add_to_registration(registration, bundle_uuid, program,
+                                            file, controlled_access)
+                else:
+                    logging.info("no metadata file found in %s" % dir_name)
+                
+                self.mkdir_p(os.path.dirname(redwood_upload_manifest))
+                logging.info("counts\t%s" % (json.dumps(counts)))
+        return redwood_registration_manifest, os.path.dirname(redwood_upload_manifest)
+ 
     ''' Kick off main analysis '''
     def run(self):
         #Assigning the environmental variables for REDWOOD ENDPOINT (here refered as redwood host),
@@ -455,11 +541,15 @@ class DockstoreRunner:
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Registering uploads")
-        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+#        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
+        #Call method to write manifest.txt to perform the upload
+        metadata_output_dir = "%s/upload/" % (self.tmp_dir)
+        redwood_registration_manifest, redwood_upload_manifest = self.register_manifest("registation.tsv", metadata_output_dir)
+        cmd = "dcc-metadata-client -o %s/manifest -m {}" % (self.tmp_dir, redwood_registration_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
-        cmd = "icgc-storage-client upload --force --manifest %s/manifest/manifest.txt" % (self.tmp_dir)
+        cmd = "icgc-storage-client upload --force --manifest %s" % (redwood_upload_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Staging metadata.json to be the return file")
