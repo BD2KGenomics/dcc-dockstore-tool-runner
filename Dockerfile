@@ -34,6 +34,7 @@ RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semve
 #use the version required by dockstore
 RUN pip install setuptools==24.0.3
 RUN pip install cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1
+RUN pip install functools32==3.2.3.post2
 
 #Patch the cwltool code that sets up the docker run command line
 #so that it includes '-v /var/run/docker.sock:/var/run/docker.sock

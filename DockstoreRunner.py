@@ -26,8 +26,10 @@ import base64
 import os
 from urllib import urlopen
 from uuid import uuid4
+
 import logging
 import hashlib
+from functools import partial
 
 import os
 import sys
@@ -545,7 +547,7 @@ class DockstoreRunner:
         #Call method to write manifest.txt to perform the upload
         metadata_output_dir = "%s/upload/" % (self.tmp_dir)
         redwood_registration_manifest, redwood_upload_manifest = self.register_manifest("registation.tsv", metadata_output_dir)
-        cmd = "dcc-metadata-client -o %s/manifest -m {}" % (self.tmp_dir, redwood_registration_manifest)
+        cmd = "dcc-metadata-client -o %s/manifest -m %s" % (self.tmp_dir, redwood_registration_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
