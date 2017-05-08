@@ -24,7 +24,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.10"
+    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.11"
 hints:
   - class: ResourceRequirement
     coresMin: 1
