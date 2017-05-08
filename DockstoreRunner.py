@@ -41,6 +41,7 @@ class DockstoreRunner:
         self.MAX_PIPELINE_ATTEMPTS= 1
 
         parser = argparse.ArgumentParser(description='Downloads, runs tool via Dockstore, then uploads results.')
+        parser.add_argument('--program-name', default='DEV', required=True)
         parser.add_argument('--redwood-path', default='/usr/local/ucsc-storage-client', required=False)
         parser.add_argument('--redwood-token', default='token-UUID-dummy-value', required=True)
         parser.add_argument('--redwood-host', default='redwood.io', required=True)
@@ -65,6 +66,7 @@ class DockstoreRunner:
 
         # get args
         args = parser.parse_args()
+        self.program_name = args.program_name
         self.redwood_path = args.redwood_path
         self.redwood_host = args.redwood_host
         self.redwood_auth_host = args.redwood_auth_host
@@ -385,11 +387,11 @@ class DockstoreRunner:
                     logging.debug("found bundle directory at %s"
                                   % (bundleDirFullPath))
                     counts["bundlesFound"] += 1
-                    bundle_metadata = self.loadJsonObj(
-                        os.path.join(bundleDirFullPath, "metadata.json"))
+                    #bundle_metadata = self.loadJsonObj(
+                    #    os.path.join(bundleDirFullPath, "metadata.json"))
                     #There is no program in the metadata.json generated. Need to figure out
                     #how to get that...
-                    #program = bundle_metadata["program"].replace(' ', '_')
+                    program = self.program_name
                     bundle_uuid = os.path.basename(dir_name)
                     controlled_access = True
                     if redwood_upload_manifest is None:
