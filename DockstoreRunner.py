@@ -546,8 +546,8 @@ class DockstoreRunner:
 #        cmd = "dcc-metadata-client -i %s/upload/%s -o %s/manifest -m manifest.txt" % (self.tmp_dir, self.bundle_uuid, self.tmp_dir)
         #Call method to write manifest.txt to perform the upload
         metadata_output_dir = "%s/upload/" % (self.tmp_dir)
-        redwood_registration_manifest, redwood_upload_manifest = self.register_manifest("registation.tsv", metadata_output_dir)
-        cmd = "dcc-metadata-client -o %s/manifest -m %s" % (self.tmp_dir, redwood_registration_manifest)
+        redwood_registration_manifest, redwood_upload_manifest = self.register_manifest("registration.tsv", metadata_output_dir)
+        cmd = "dcc-metadata-client -o %s -m %s" % (redwood_upload_manifest, redwood_registration_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
