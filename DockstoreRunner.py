@@ -409,9 +409,9 @@ class DockstoreRunner:
                 else:
                     logging.info("no metadata file found in %s" % dir_name)
                 
-                self.mkdir_p(os.path.dirname(redwood_upload_manifest))
                 logging.info("counts\t%s" % (json.dumps(counts)))
-        return redwood_registration_manifest, os.path.dirname(redwood_upload_manifest)
+        self.mkdir_p(os.path.dirname(redwood_upload_manifest))
+        return redwood_registration_manifest, redwood_upload_manifest
  
     ''' Kick off main analysis '''
     def run(self):
@@ -547,7 +547,7 @@ class DockstoreRunner:
         #Call method to write manifest.txt to perform the upload
         metadata_output_dir = "%s/upload/" % (self.tmp_dir)
         redwood_registration_manifest, redwood_upload_manifest = self.register_manifest("registration.tsv", metadata_output_dir)
-        cmd = "dcc-metadata-client -o %s -m %s" % (redwood_upload_manifest, redwood_registration_manifest)
+        cmd = "dcc-metadata-client -o %s -m %s" % (os.path.dirname(redwood_upload_manifest), redwood_registration_manifest)
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
         print("Performing uploads")
