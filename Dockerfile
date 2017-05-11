@@ -48,10 +48,10 @@ RUN pip install functools32==3.2.3.post2
 #/usr/local/lib/python2.7/dist-packages/cwltool/job.py
 #TODO?? make sure the path exists and the current version
 #of python is the right one?
-#COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
-#RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
-#COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
-#RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
+COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
+COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
 
 #Add ubuntu user and group
 RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
