@@ -32,8 +32,8 @@ RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semve
 
 #install cwltool in the container
 #use the version required by dockstore
-RUN pip install setuptools==24.0.3
-RUN pip install cwl-runner cwltool==1.0.20160712154127 schema-salad==1.14.20160708181155 avro==1.8.1
+RUN pip install setuptools==28.8.0
+RUN pip install cwl-runner cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
 RUN pip install functools32==3.2.3.post2
 
 #Patch the cwltool code that sets up the docker run command line
@@ -48,10 +48,10 @@ RUN pip install functools32==3.2.3.post2
 #/usr/local/lib/python2.7/dist-packages/cwltool/job.py
 #TODO?? make sure the path exists and the current version
 #of python is the right one?
-#COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
-#RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
-#COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
-#RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
+COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
+COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
 
 #Add ubuntu user and group
 RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu

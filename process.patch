@@ -1,11 +1,11 @@
---- process.py	2016-11-22 02:38:24.325145770 +0000
-+++ process_new.py	2016-11-22 03:17:07.604557814 +0000
-@@ -200,7 +200,7 @@
-         return outputObj
+--- process.py	2017-05-11 14:49:28.000000000 -0700
++++ process_new.py	2017-05-11 14:41:49.000000000 -0700
+@@ -211,7 +211,7 @@
  
      def moveIt(src, dst):
--        for a in output_dirs:
-+        for a in set(['/datastore']):
-             if src.startswith(a):
-                 if action == "move":
+         if action == "move":
+-            for a in output_dirs:
++            for a in set(['/datastore']):
+                 if src.startswith(a):
                      _logger.debug("Moving %s to %s", src, dst)
+                     shutil.move(src, dst)
