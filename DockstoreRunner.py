@@ -29,6 +29,7 @@ from uuid import uuid4
 
 import logging
 import hashlib
+import errno
 from functools import partial
 
 import os
