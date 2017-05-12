@@ -72,6 +72,7 @@ ENV PATH /home/ubuntu/Dockstore/:$PATH
 #copy dockstore files to root so root can run dockstore
 COPY .dockstore/ /root/.dockstore
 COPY Dockstore/ /root/Dockstore
+RUN mkdir /root/.dockstore/plugins
 RUN chmod a+x /root/Dockstore/dockstore
 
 ENV PATH /root/Dockstore/:$PATH

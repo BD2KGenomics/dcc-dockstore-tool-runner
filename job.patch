@@ -1,5 +1,5 @@
---- job.py	2017-05-11 14:49:28.000000000 -0700
-+++ job_new.py	2017-05-11 14:41:49.000000000 -0700
+--- job.py	2017-05-11 22:31:13.273940735 +0000
++++ job_new.py	2017-05-12 18:58:07.105757991 +0000
 @@ -147,6 +147,10 @@
  
          if img_id:
@@ -97,6 +97,15 @@
                  dn = os.path.dirname(absout)
                  if dn and not os.path.exists(dn):
                      os.makedirs(dn)
+@@ -270,7 +274,7 @@
+                 stdout_path=stdout_path,
+                 stderr_path=stderr_path,
+                 env=env,
+-                cwd=self.outdir,
++                cwd=os.path.normpath(os.path.dirname(self.outdir)),
+                 build_job_script=build_job_script,
+             )
+ 
 @@ -295,7 +299,7 @@
  
                  stageFiles(generatemapper, linkoutdir, ignoreWritable=True)
@@ -123,12 +132,3 @@
  
  
  def _job_popen(
-@@ -380,7 +384,7 @@
-                               stdout=stdout,
-                               stderr=stderr,
-                               env=env,
--                              cwd=cwd)
-+                              cwd=os.path.normpath(os.path.dirname(self.outdir)))
- 
-         if sp.stdin:
-             sp.stdin.close()

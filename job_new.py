@@ -274,7 +274,7 @@ class CommandLineJob(object):
                 stdout_path=stdout_path,
                 stderr_path=stderr_path,
                 env=env,
-                cwd=self.outdir,
+                cwd=os.path.normpath(os.path.dirname(self.outdir)),
                 build_job_script=build_job_script,
             )
 
@@ -384,7 +384,7 @@ def _job_popen(
                               stdout=stdout,
                               stderr=stderr,
                               env=env,
-                              cwd=os.path.normpath(os.path.dirname(self.outdir)))
+                              cwd=cwd)
 
         if sp.stdin:
             sp.stdin.close()
