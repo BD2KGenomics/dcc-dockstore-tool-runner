@@ -203,7 +203,7 @@ class CommandLineJob(object):
                 for key, value in os.environ.items():
                     if key in vars_to_preserve and key not in env:
                         env[key] = value
-            env["HOME"] = self.outdir
+            env["HOME"] = os.path.normpath(os.path.dirname(self.outdir))
             env["TMPDIR"] = os.path.normpath(os.path.dirname(self.tmpdir))
 
             stageFiles(self.pathmapper, os.symlink)
@@ -356,7 +356,7 @@ def _job_popen(
     if build_job_script:
         job_script_contents = build_job_script(commands)
 
-    if not job_script_contents and not FORCE_SHELLED_POPEN:
+    if True:
 
         stdin = None  # type: Union[IO[Any], int]
         stderr = None  # type: IO[Any]
