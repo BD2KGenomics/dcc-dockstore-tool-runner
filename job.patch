@@ -1,5 +1,5 @@
 --- job.py	2017-05-18 20:30:01.573793271 +0000
-+++ job_new.py	2017-05-18 20:56:04.206154466 +0000
++++ job_new.py	2017-05-18 21:14:19.831325718 +0000
 @@ -147,6 +147,10 @@
  
          if img_id:
@@ -50,11 +50,13 @@
              vars_to_preserve = kwargs.get("preserve_environment")
              if kwargs.get("preserve_entire_environment"):
                  vars_to_preserve = os.environ
-@@ -200,7 +204,7 @@
+@@ -199,8 +203,8 @@
+                 for key, value in os.environ.items():
                      if key in vars_to_preserve and key not in env:
                          env[key] = value
-             env["HOME"] = self.outdir
+-            env["HOME"] = self.outdir
 -            env["TMPDIR"] = self.tmpdir
++            env["HOME"] = os.path.normpath(os.path.dirname(self.outdir))
 +            env["TMPDIR"] = os.path.normpath(os.path.dirname(self.tmpdir))
  
              stageFiles(self.pathmapper, os.symlink)
@@ -132,3 +134,12 @@
  
  
  def _job_popen(
+@@ -352,7 +356,7 @@
+     if build_job_script:
+         job_script_contents = build_job_script(commands)
+ 
+-    if not job_script_contents and not FORCE_SHELLED_POPEN:
++    if True:
+ 
+         stdin = None  # type: Union[IO[Any], int]
+         stderr = None  # type: IO[Any]
