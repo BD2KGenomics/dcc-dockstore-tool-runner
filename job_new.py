@@ -162,7 +162,7 @@ class CommandLineJob(object):
                     runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
             #runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.outdir), "/var/spool/cwl"))
             runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.tmpdir)), "/tmp"))
-            runtime.append(u"--workdir=%s" % ("/datastore"))
+            runtime.append(u"--workdir=%s" % (os.path.normpath(os.path.dirname(self.outdir))))
             runtime.append("--read-only=true")
 
             if kwargs.get("custom_net", None) is not None:
@@ -186,7 +186,7 @@ class CommandLineJob(object):
             # spec currently says "HOME must be set to the designated output
             # directory." but spec might change to designated temp directory.
             # runtime.append("--env=HOME=/tmp")
-            runtime.append("--env=HOME="+"/datastore")#os.path.normpath(os.path.dirname(self.outdir)))
+            runtime.append("--env=HOME="+os.path.normpath(os.path.dirname(self.outdir)))
 
             for t, v in self.environment.items():
                 runtime.append(u"--env=%s=%s" % (t, v))
