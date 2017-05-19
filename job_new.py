@@ -181,7 +181,7 @@ class CommandLineJob(object):
             if rm_container:
                 runtime.append("--rm")
 
-            runtime.append("--env=TMPDIR="+os.path.normpath(os.path.dirname(self.tmpdir))).strip("/tmp")
+            runtime.append("--env=TMPDIR="+os.path.normpath(os.path.dirname(self.tmpdir)).strip("/tmp"))
 
             # spec currently says "HOME must be set to the designated output
             # directory." but spec might change to designated temp directory.
