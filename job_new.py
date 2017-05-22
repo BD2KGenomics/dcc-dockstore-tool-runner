@@ -34,7 +34,6 @@ PYTHON_RUN_SCRIPT = """
 import json
 import sys
 import subprocess
-
 with open(sys.argv[1], "r") as f:
     popen_description = json.load(f)
     commands = popen_description["commands"]
@@ -161,8 +160,8 @@ class CommandLineJob(object):
                         f.write(vol.resolved.encode("utf-8"))
                     runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
             #runtime.append(u"--volume=%s:%s:rw" % (os.path.abspath(self.outdir), "/var/spool/cwl"))
-            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.tmpdir)).rstrip("/tmp"), "/tmp"))
-            runtime.append(u"--workdir=%s" % "/datastore")#(os.path.normpath(os.path.dirname(self.outdir))))
+            runtime.append(u"--volume=%s:%s:rw" % (os.path.normpath(os.path.dirname(self.tmpdir)), "/tmp"))
+            runtime.append(u"--workdir=%s" % (os.path.normpath(os.path.dirname(self.outdir))))
             runtime.append("--read-only=true")
 
             if kwargs.get("custom_net", None) is not None:
@@ -181,12 +180,12 @@ class CommandLineJob(object):
             if rm_container:
                 runtime.append("--rm")
 
-            runtime.append("--env=TMPDIR="+os.path.normpath(os.path.dirname(self.tmpdir)).rstrip("/tmp"))
+            runtime.append("--env=TMPDIR="+os.path.normpath(os.path.dirname(self.tmpdir)))
 
             # spec currently says "HOME must be set to the designated output
             # directory." but spec might change to designated temp directory.
             # runtime.append("--env=HOME=/tmp")
-            runtime.append("--env=HOME="+"/datastore")#os.path.normpath(os.path.dirname(self.outdir)))
+            runtime.append("--env=HOME="+os.path.normpath(os.path.dirname(self.outdir)))
 
             for t, v in self.environment.items():
                 runtime.append(u"--env=%s=%s" % (t, v))
@@ -203,7 +202,7 @@ class CommandLineJob(object):
                 for key, value in os.environ.items():
                     if key in vars_to_preserve and key not in env:
                         env[key] = value
-            env["HOME"] = os.path.normpath(os.path.dirname(self.outdir))
+            env["HOME"] = self.outdir
             env["TMPDIR"] = os.path.normpath(os.path.dirname(self.tmpdir))
 
             stageFiles(self.pathmapper, os.symlink)
@@ -356,7 +355,7 @@ def _job_popen(
     if build_job_script:
         job_script_contents = build_job_script(commands)
 
-    if True:
+    if not job_script_contents and not FORCE_SHELLED_POPEN:
 
         stdin = None  # type: Union[IO[Any], int]
         stderr = None  # type: IO[Any]
