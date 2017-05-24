@@ -1,0 +1,21 @@
+--- main.py	2017-05-23 18:51:12.839227841 +0000
++++ main_new.py	2017-05-23 22:41:39.979009776 +0000
+@@ -200,7 +200,7 @@
+     output_dirs = set()
+     finaloutdir = kwargs.get("outdir")
+     kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
+-        "tmp_outdir_prefix") else tempfile.mkdtemp()
++        "tmp_outdir_prefix") else tempfile.mkdtemp() 
+     output_dirs.add(kwargs["outdir"])
+ 
+     jobReqs = None
+@@ -612,7 +612,8 @@
+                      'validate': False}.iteritems():
+             if not hasattr(args, k):
+                 setattr(args, k, v)
+-
++        #HACK; Setting tmp_outdir_prefix to /datastore/
++        setattr(args, 'tmp_outdir_prefix', '/datastore/') 
+         if args.quiet:
+             _logger.setLevel(logging.WARN)
+         if args.debug:
