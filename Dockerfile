@@ -1,13 +1,9 @@
-FROM quay.io/ucsc_cgl/redwood-client:1.1.1
+FROM quay.io/ucsc_cgl/redwood-client:1.2.0
 
 MAINTAINER Walt Shands jshands@ucsc.edu
 
-#patch logback.xml so the storage client writes its log files to /tmp because other
-#directories are readonly when cwltool runs the container
-RUN sed -i 's~<property name=\"log.dir\" value=\"${logging.path:-/tmp/icgc-storage-client/logs}\" />~<property name=\"log.dir\" value=\"/tmp/icgc-storage-client/logs\" />~g' /dcc/icgc-storage-client/conf/logback.xml
-
-RUN sed -i 's~<property name=\"log.dir\" value=\"${LOG_PATH:-../logs}\" />~<property name=\"log.dir\" value=\"/tmp/dcc-metadata-client/logs\" />~g' /dcc/dcc-metadata-client/conf/logback.xml
-
+#Set the log directory for redwood to be under /tmp since the rest of the file system is locked
+ENV REDWOOD_LOG_DIR /tmp
 
 WORKDIR ./
 
