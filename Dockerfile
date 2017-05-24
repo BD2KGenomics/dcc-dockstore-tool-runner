@@ -52,6 +52,8 @@ COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
 COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
+COPY main.patch /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
+RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
 
 #Add ubuntu user and group
 RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
@@ -72,6 +74,7 @@ ENV PATH /home/ubuntu/Dockstore/:$PATH
 #copy dockstore files to root so root can run dockstore
 COPY .dockstore/ /root/.dockstore
 COPY Dockstore/ /root/Dockstore
+RUN mkdir /root/.dockstore/plugins
 RUN chmod a+x /root/Dockstore/dockstore
 
 ENV PATH /root/Dockstore/:$PATH

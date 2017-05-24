@@ -34,7 +34,6 @@ PYTHON_RUN_SCRIPT = """
 import json
 import sys
 import subprocess
-
 with open(sys.argv[1], "r") as f:
     popen_description = json.load(f)
     commands = popen_description["commands"]
@@ -274,7 +273,7 @@ class CommandLineJob(object):
                 stdout_path=stdout_path,
                 stderr_path=stderr_path,
                 env=env,
-                cwd=self.outdir,
+                cwd=os.path.normpath(os.path.dirname(self.outdir)),
                 build_job_script=build_job_script,
             )
 
@@ -384,7 +383,7 @@ def _job_popen(
                               stdout=stdout,
                               stderr=stderr,
                               env=env,
-                              cwd=os.path.normpath(os.path.dirname(self.outdir)))
+                              cwd=cwd)
 
         if sp.stdin:
             sp.stdin.close()

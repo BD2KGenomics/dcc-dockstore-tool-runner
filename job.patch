@@ -1,6 +1,14 @@
---- job.py	2017-05-11 14:49:28.000000000 -0700
-+++ job_new.py	2017-05-11 14:41:49.000000000 -0700
-@@ -147,6 +147,10 @@
+--- job.py	2017-05-18 20:30:01.573793271 +0000
++++ job_new.py	2017-05-22 21:16:35.464979861 +0000
+@@ -34,7 +34,6 @@
+ import json
+ import sys
+ import subprocess
+-
+ with open(sys.argv[1], "r") as f:
+     popen_description = json.load(f)
+     commands = popen_description["commands"]
+@@ -147,6 +146,10 @@
  
          if img_id:
              runtime = ["docker", "run", "-i"]
@@ -11,7 +19,7 @@
              for src in self.pathmapper.files():
                  vol = self.pathmapper.mapper(src)
                  if vol.type == "File":
-@@ -156,9 +160,9 @@
+@@ -156,9 +159,9 @@
                      with open(createtmp, "w") as f:
                          f.write(vol.resolved.encode("utf-8"))
                      runtime.append(u"--volume=%s:%s:ro" % (createtmp, vol.target))
@@ -24,7 +32,7 @@
              runtime.append("--read-only=true")
  
              if kwargs.get("custom_net", None) is not None:
-@@ -177,12 +181,12 @@
+@@ -177,12 +180,12 @@
              if rm_container:
                  runtime.append("--rm")
  
@@ -39,7 +47,7 @@
  
              for t, v in self.environment.items():
                  runtime.append(u"--env=%s=%s" % (t, v))
-@@ -190,8 +194,8 @@
+@@ -190,8 +193,8 @@
              runtime.append(img_id)
          else:
              env = self.environment
@@ -50,7 +58,7 @@
              vars_to_preserve = kwargs.get("preserve_environment")
              if kwargs.get("preserve_entire_environment"):
                  vars_to_preserve = os.environ
-@@ -200,7 +204,7 @@
+@@ -200,7 +203,7 @@
                      if key in vars_to_preserve and key not in env:
                          env[key] = value
              env["HOME"] = self.outdir
@@ -59,7 +67,7 @@
  
              stageFiles(self.pathmapper, os.symlink)
  
-@@ -214,7 +218,7 @@
+@@ -214,7 +217,7 @@
  
          _logger.info(u"[job %s] %s$ %s%s%s%s",
                       self.name,
@@ -68,7 +76,7 @@
                       " \\\n    ".join([shellescape.quote(Text(arg)) if shouldquote(Text(arg)) else Text(arg) for arg in
                                         (runtime + self.command_line)]),
                       u' < %s' % self.stdin if self.stdin else '',
-@@ -228,8 +232,8 @@
+@@ -228,8 +231,8 @@
  
          try:
              if self.generatefiles["listing"]:
@@ -79,7 +87,7 @@
                  _logger.debug(u"[job %s] initial work dir %s", self.name,
                                json.dumps({p: generatemapper.mapper(p) for p in generatemapper.files()}, indent=4))
  
-@@ -249,7 +253,7 @@
+@@ -249,7 +252,7 @@
  
              stderr_path = None
              if self.stderr:
@@ -88,7 +96,7 @@
                  dnerr = os.path.dirname(abserr)
                  if dnerr and not os.path.exists(dnerr):
                      os.makedirs(dnerr)
-@@ -257,7 +261,7 @@
+@@ -257,7 +260,7 @@
  
              stdout_path = None
              if self.stdout:
@@ -97,7 +105,16 @@
                  dn = os.path.dirname(absout)
                  if dn and not os.path.exists(dn):
                      os.makedirs(dn)
-@@ -295,7 +299,7 @@
+@@ -270,7 +273,7 @@
+                 stdout_path=stdout_path,
+                 stderr_path=stderr_path,
+                 env=env,
+-                cwd=self.outdir,
++                cwd=os.path.normpath(os.path.dirname(self.outdir)),
+                 build_job_script=build_job_script,
+             )
+ 
+@@ -295,7 +298,7 @@
  
                  stageFiles(generatemapper, linkoutdir, ignoreWritable=True)
  
@@ -106,7 +123,7 @@
  
          except OSError as e:
              if e.errno == 2:
-@@ -328,12 +332,12 @@
+@@ -328,12 +331,12 @@
              shutil.rmtree(self.stagedir, True)
  
          if rm_tmpdir:
@@ -123,12 +140,3 @@
  
  
  def _job_popen(
-@@ -380,7 +384,7 @@
-                               stdout=stdout,
-                               stderr=stderr,
-                               env=env,
--                              cwd=cwd)
-+                              cwd=os.path.normpath(os.path.dirname(self.outdir)))
- 
-         if sp.stdin:
-             sp.stdin.close()
