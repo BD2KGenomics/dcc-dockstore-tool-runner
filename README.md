@@ -99,7 +99,7 @@ Most people, other than developers of this tool, will use the Dockstore CLI to i
 
     # patch in /usr/local/lib/python2.7/dist-packages/cwltool
     # make a tmpdir like /datastore
-    docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.14 .
+    docker build -t quay.io/ucsc_cgl/dockstore-tool-runner:1.0.16 .
     # fill in your JSON from Dockstore.json template as Dockstore.my.json
     mkdir /datastore; chown ubuntu:ubuntu /datastore/
     # local execution
@@ -107,7 +107,7 @@ Most people, other than developers of this tool, will use the Dockstore CLI to i
     # as root in /datastore
     TMPDIR=/datastore dockstore tool launch --entry ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl --local-entry --json ~ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.my.json
     # execute published on dockstore (this is the way most people will use this tool!)
-    dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.14 --json Dockstore.my.json
+    dockstore tool launch --entry quay.io/ucsc_cgl/dockstore-tool-runner:1.0.16 --json Dockstore.my.json
 
     # running you see it launch the cwltool command, you mind find this useful while debugging
     cwltool --enable-dev --non-strict --enable-net --outdir /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/outputs/ --tmpdir-prefix /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/working/ /home/ubuntu/gitroot/BD2KGenomics/dcc-dockstore-tool-runner/Dockstore.cwl /datastore/./datastore/launcher-ff6b55b3-52e8-430c-9a70-1ff295332698/workflow_params.json
