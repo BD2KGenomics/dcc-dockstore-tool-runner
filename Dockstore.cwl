@@ -24,7 +24,7 @@ dct:creator:
 
 requirements:
   - class: DockerRequirement
-    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.16"
+    dockerPull: "quay.io/ucsc_cgl/dockstore-tool-runner:1.0.17"
 
 hints:
   - class: ResourceRequirement
@@ -77,7 +77,7 @@ inputs:
       prefix: --workflow-type
 
   launch_type:
-    type: string
+    type: string?
     doc: "String that describes the launch type: tool or workflow"
     inputBinding:
       prefix: --launch-type
