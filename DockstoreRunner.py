@@ -53,6 +53,9 @@ class DockstoreRunner:
         parser.add_argument('--json-encoded', default='e30=', required=True)
         parser.add_argument('--docker-uri', default='quay.io/wshands/fastqc:latest', required=True)
         parser.add_argument('--dockstore-url', default='https://dockstore.org/containers/quay.io/wshands/fastqc', required=True)
+        parser.add_argument('--launch-type', default='tool', const='tool', nargs='?', 
+                         choices=['tool', 'workflow'], required=False, 
+                         help='run a workflow or tool (default: %(default)s)')
         parser.add_argument('--workflow-type', default='sequence_upload_qc_report', required=True)
         parser.add_argument('--parent-uuids', default='parent-UUID-dummy-value', required=True)
         # FIXME: this append seems to crash on the mac but it would be the way to go if we want multiple parents
@@ -84,6 +87,7 @@ class DockstoreRunner:
         self.dockstore_url = args.dockstore_url
         self.workflow_name = args.docker_uri.split(':')[0]
         self.workflow_version = args.docker_uri.split(':')[1]
+        self.launch_type = args.launch_type
         self.workflow_type = args.workflow_type
         self.parent_uuids = args.parent_uuids
         self.bundle_uuid = uuid4()
@@ -447,7 +451,7 @@ class DockstoreRunner:
         self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS, True)
 
         print("Calling Dockstore to launch a Dockstore tool")
-        cmd = "dockstore tool launch --debug --entry "+self.docker_uri+" --json "+transformed_json_path
+        cmd = "dockstore " + self.launch_type + " launch --debug --entry "+self.docker_uri+" --json "+transformed_json_path
         self.run_command(cmd, self.MAX_PIPELINE_ATTEMPTS, self.DELAY_IN_SECONDS, cwd=self.tmp_dir)
 
         t_end = time.time()
