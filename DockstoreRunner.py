@@ -467,16 +467,14 @@ class DockstoreRunner:
 {
    "version" : "1.0.0",
    "timestamp" : "%s",
-   "parent_uuids" : [
-      "%s"
-   ],
+   "parent_uuids" :"%s",
    "workflow_url" : "%s",
    "workflow_name" : "%s",
    "workflow_version" : "%s",
    "analysis_type" : "%s",
    "bundle_uuid" : "%s",
    "workflow_params" : {
-''' % (str(utc_datetime.isoformat("T")), self.parent_uuids, self.dockstore_url, self.workflow_name, self.workflow_version, self.workflow_type, self.bundle_uuid)
+''' % (str(utc_datetime.isoformat("T")), self.parent_uuids.split(","), self.dockstore_url, self.workflow_name, self.workflow_version, self.workflow_type, self.bundle_uuid)
         i=0
         (params_map, file_input_map) = self.map_params(transformed_json_path)
         params_map_keys = params_map.keys()
