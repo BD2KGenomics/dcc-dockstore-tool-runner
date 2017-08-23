@@ -330,7 +330,7 @@ class DockstoreRunner:
                 #create list of individual command 'words' for input to run commmand function
                 self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
-                cmd = "icgc-storage-client download --output-dir {} --object-id {} --output-layout bundle".format(self.tmp_dir, file_uuid)
+                cmd = "icgc-storage-client download --output-dir {} --object-id {} --output-layout bundle --force".format(self.tmp_dir, file_uuid)
                 #create list of individual command 'words' for input to run commmand function
                 self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS)
 
