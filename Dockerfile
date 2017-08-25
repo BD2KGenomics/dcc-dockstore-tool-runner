@@ -20,16 +20,17 @@ RUN apt-get update && apt-get install --yes \
     libxml2-dev \
     libxslt-dev \
     lib32z1-dev \
-    python-setuptools \
     build-essential
 
 RUN pip install --upgrade pip
-RUN pip install jsonschema jsonmerge openpyxl sets json-spec elasticsearch semver
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 #install cwltool in the container
 #use the version required by dockstore
 RUN pip install setuptools==28.8.0
-RUN pip install cwl-runner cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
+RUN pip install cwl-runner==1.0 cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
 RUN pip install functools32==3.2.3.post2
 
 #Patch the cwltool code that sets up the docker run command line
