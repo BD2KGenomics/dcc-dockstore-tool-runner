@@ -467,7 +467,7 @@ class DockstoreRunner:
 {
    "version" : "1.0.0",
    "timestamp" : "%s",
-   "parent_uuids" :"%s",
+   "parent_uuids" : %s,
    "workflow_url" : "%s",
    "workflow_name" : "%s",
    "workflow_version" : "%s",
