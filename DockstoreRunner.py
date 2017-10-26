@@ -513,14 +513,14 @@ class DockstoreRunner:
    "timing_metrics" : {
       "step_timing" : {
          "download" : {
-            "start_time_utc" : "%s"
+            "start_time_utc" : "%s",
             "stop_time_utc" : "%s",
-            "walltime_seconds" : %d,
+            "walltime_seconds" : %d
          },
          "tool_run" : {
-            "start_time_utc" : "%s"
+            "start_time_utc" : "%s",
             "stop_time_utc" : "%s",
-            "walltime_seconds" : %d,
+            "walltime_seconds" : %d
          }
       },
       "overall_start_time_utc" : "%s",
