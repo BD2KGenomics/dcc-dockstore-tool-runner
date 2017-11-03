@@ -513,18 +513,18 @@ class DockstoreRunner:
    "timing_metrics" : {
       "step_timing" : {
          "download" : {
+            "start_time_utc" : "%s",
             "stop_time_utc" : "%s",
-            "walltime_seconds" : %d,
-            "start_time_utc" : "%s"
+            "walltime_seconds" : %d
          },
          "tool_run" : {
+            "start_time_utc" : "%s",
             "stop_time_utc" : "%s",
-            "walltime_seconds" : %d,
-            "start_time_utc" : "%s"
+            "walltime_seconds" : %d
          }
       },
-      "overall_stop_time_utc" : "%s",
       "overall_start_time_utc" : "%s",
+      "overall_stop_time_utc" : "%s",
       "overall_walltime_seconds" : %d
    },
    "host_metrics" : {
@@ -535,7 +535,7 @@ class DockstoreRunner:
       "vm_location" : "%s"
    }
 }
-        ''' % (str(d_utc_datetime.isoformat("T")), d_diff, str(d_utc_datetime_end.isoformat("T")), str(t_utc_datetime.isoformat("T")), t_diff, str(t_utc_datetime_end.isoformat("T")), str(utc_datetime.isoformat("T")), str(d_utc_datetime.isoformat("T")), o_diff, self.vm_instance_type, self.vm_region, self.vm_instance_cores, self.vm_instance_mem_gb, self.vm_location)
+        ''' % (str(d_utc_datetime.isoformat("T")), str(d_utc_datetime_end.isoformat("T")), d_diff, str(t_utc_datetime.isoformat("T")), str(t_utc_datetime_end.isoformat("T")), t_diff, str(d_utc_datetime.isoformat("T")), str(utc_datetime.isoformat("T")), o_diff, self.vm_instance_type, self.vm_region, self.vm_instance_cores, self.vm_instance_mem_gb, self.vm_location)
         # FIXME: hardcoded instance information
         f = open(self.tmp_dir+'/upload/'+str(self.bundle_uuid)+'/metadata.json', 'w')
         print(metadata, file=f)
