@@ -29,8 +29,11 @@ RUN pip install -r requirements.txt
 
 #install cwltool in the container
 #use the version required by dockstore
-RUN pip install setuptools==28.8.0
-RUN pip install cwl-runner==1.0 cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
+#RUN pip install setuptools==28.8.0
+#RUN pip install cwl-runner==1.0 cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
+
+RUN pip install setuptools==36.5.0
+RUN pip install cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
 RUN pip install functools32==3.2.3.post2
 
 #Patch the cwltool code that sets up the docker run command line
