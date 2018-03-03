@@ -62,6 +62,8 @@ COPY .dockstore/ /home/ubuntu/.dockstore
 RUN chown -R ubuntu:ubuntu /home/ubuntu/.dockstore
 COPY Dockstore/ /home/ubuntu/Dockstore
 RUN chown -R ubuntu:ubuntu /home/ubuntu/Dockstore && chmod a+x /home/ubuntu/Dockstore/dockstore
+RUN mkdir /home/ubuntu/.dockstore/libraries
+RUN wget https://github.com/broadinstitute/cromwell/releases/download/30.2/cromwell-30.2.jar -O /home/ubuntu/.dockstore/libraries/cromwell-30.2.jar
 
 ENV PATH /home/ubuntu/Dockstore/:$PATH
 #ENV HOME /home/ubuntu
