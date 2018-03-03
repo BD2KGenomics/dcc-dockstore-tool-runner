@@ -259,25 +259,13 @@ def single_job_executor(t,  # type: Process
     #of other containers and can write results to the same directory
     #Dockstore tool runner assumes all results are in /datastore
     kwargs["outdir"] = '/datastore'
-
+    #Final results from the workflow in the CGP is stored in /datastore also
     finaloutdir = os.path.abspath(kwargs.get("outdir")) if kwargs.get("outdir") else None
-
-    kwargs["docker_outdir"] = '/datastore'
-
-    #it doesn't seem to matter where the docker stageing directory is
-    #so we dont' set it to /datastore
-    #kwargs["docker_stagedir"] = '/datastore'
-
-    #we can't make random directories at the /datastore location
-    #because containers that are launched may want to access
-    #results from previous steps in the pipeline and those results
-    #have to be in a predictable place 
-    kwargs["outdir"] = kwargs["tmp_outdir_prefix"] if kwargs.get(
-        "tmp_outdir_prefix") else tempfile.mkdtemp()
     #kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
     #    "tmp_outdir_prefix") else tempfile.mkdtemp()
 
     output_dirs.add(kwargs["outdir"])
+
     kwargs["mutation_manager"] = MutationManager()
 
     jobReqs = None
@@ -310,10 +298,6 @@ def single_job_executor(t,  # type: Process
     except Exception as e:
         _logger.exception("Got workflow error")
         raise WorkflowException(Text(e))
-
-    #for outputfile in final_output:
-    #    print("!!!!! final output{}".format(outputfile))
-    #print("!!!!! finaloutdir{}".format(finaloutdir))
 
     if final_output and final_output[0] and finaloutdir:
         final_output[0] = relocateOutputs(final_output[0], finaloutdir,
@@ -778,14 +762,6 @@ def main(argsl=None,  # type: List[str]
         }):
             if not hasattr(args, k):
                 setattr(args, k, v)
-
-        #workflows run in the CGP will use the /datastore directory
-        #on the host to store all results. This has to be a fixed directory
-        #so that Docker containers created by other Docker containers
-        #can know its location ahead of time so they can access output 
-        #of other containers and can write results to the same directory
-        #Dockstore tool runner assumes all results are in /datastore
-        setattr(args, 'tmp_outdir_prefix', '/datastore') 
 
         if args.quiet:
             _logger.setLevel(logging.WARN)

@@ -149,9 +149,6 @@ class JobBase(object):
         if not os.path.exists(self.outdir):
             os.makedirs(self.outdir)
 
-        #print("!!!! job.py - self.outdir is:{}".format(self.outdir))
-       
-
         for knownfile in self.pathmapper.files():
             p = self.pathmapper.mapper(knownfile)
             if p.type == "File" and not os.path.isfile(p[0]) and p.staged:
@@ -240,8 +237,6 @@ class JobBase(object):
 
             if self.generatefiles["listing"]:
                 relink_initialworkdir(self.generatemapper, self.outdir, self.builder.outdir, inplace_update=self.inplace_update)
-
-            #print('!!!! job.py - collecting outputs from {}'.format(self.outdir))
 
             outputs = self.collect_outputs(self.outdir)
             outputs = bytes2str_in_dicts(outputs)  # type: ignore
@@ -392,13 +387,11 @@ class DockerCommandLineJob(JobBase):
 
         runtime = [u"docker", u"run", u"-i"]
 
-        #print('!!!! outdir is:{}'.format(self.outdir))
-        #print('!!!! builder outdir is:{}'.format(self.builder.outdir))
-
         # add the volume for the docker socket on the host so we can create containers on the host
         runtime.append(u"--volume=%s:%s:rw" % ("/var/run/docker.sock", "/var/run/docker.sock"))
         # add a volume for the place on the host where all the containers will put data
-        #runtime.append(u"--volume=%s:%s:rw" % ('/datastore', '/datastore'))
+        runtime.append(u"--volume=%s:%s:rw" % ('/datastore', '/datastore'))
+
         runtime.append(u"--volume=%s:%s:rw" % (docker_windows_path_adjust(os.path.realpath(self.outdir)), self.builder.outdir))
         runtime.append(u"--volume=%s:%s:rw" % (docker_windows_path_adjust(os.path.realpath(self.tmpdir)), "/tmp"))
 
@@ -406,9 +399,7 @@ class DockerCommandLineJob(JobBase):
         if self.generatemapper:
             self.add_volumes(self.generatemapper, runtime)
 
-#CGP        runtime.append(u"--workdir=%s" % docker_windows_path_adjust(os.path.realpath(self.outdir)))
         runtime.append(u"--workdir=%s" % (docker_windows_path_adjust(self.builder.outdir)))
-
         runtime.append(u"--read-only=true")
 
         if kwargs.get("custom_net", None) is not None:
@@ -434,7 +425,6 @@ class DockerCommandLineJob(JobBase):
         # spec currently says "HOME must be set to the designated output
         # directory." but spec might change to designated temp directory.
         # runtime.append("--env=HOME=/tmp")
-#        runtime.append(u"--env=HOME=%s" % self.outdir)
         runtime.append(u"--env=HOME=%s" % self.builder.outdir)
 
         for t, v in self.environment.items():
