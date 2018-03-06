@@ -50,25 +50,6 @@ RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/py
 COPY main.patch /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
 
-#Add ubuntu user and group
-RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
-
-#create /home/ubuntu in the root as owned by ubuntu
-RUN mkdir /home/ubuntu
-RUN chown ubuntu:ubuntu /home/ubuntu
-
-#install Dockstore for user ubuntu
-COPY .dockstore/ /home/ubuntu/.dockstore
-RUN chown -R ubuntu:ubuntu /home/ubuntu/.dockstore
-COPY Dockstore/ /home/ubuntu/Dockstore
-RUN chown -R ubuntu:ubuntu /home/ubuntu/Dockstore && chmod a+x /home/ubuntu/Dockstore/dockstore
-RUN mkdir /home/ubuntu/.dockstore/libraries
-#install newer Cromwell jar file cromwell-30.2.jar as cromwell-29.jar since Dockstore hard codes the version
-RUN wget https://github.com/broadinstitute/cromwell/releases/download/30.2/cromwell-30.2.jar -O /home/ubuntu/.dockstore/libraries/cromwell-29.jar
-
-ENV PATH /home/ubuntu/Dockstore/:$PATH
-#ENV HOME /home/ubuntu
-
 #copy dockstore files to root so root can run dockstore
 COPY .dockstore/ /root/.dockstore
 COPY Dockstore/ /root/Dockstore
