@@ -74,6 +74,9 @@ COPY .dockstore/ /root/.dockstore
 COPY Dockstore/ /root/Dockstore
 RUN mkdir /root/.dockstore/plugins
 RUN chmod a+x /root/Dockstore/dockstore
+RUN mkdir /root/.dockstore/libraries
+#install newer Cromwell jar file cromwell-30.2.jar as cromwell-29.jar since Dockstore hard codes the version
+RUN wget https://github.com/broadinstitute/cromwell/releases/download/30.2/cromwell-30.2.jar -O /root/.dockstore/libraries/cromwell-29.jar
 
 ENV PATH /root/Dockstore/:$PATH
 ENV HOME /root
