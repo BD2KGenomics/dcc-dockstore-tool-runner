@@ -29,8 +29,8 @@ RUN pip install -r requirements.txt
 
 #install cwltool in the container
 #use the version required by dockstore
-RUN pip install setuptools==28.8.0
-RUN pip install cwl-runner==1.0 cwltool==1.0.20170217172322 schema-salad==2.2.20170222151604 avro==1.8.1
+RUN pip install setuptools==36.5.0
+RUN pip install cwl-runner cwltool==1.0.20170828135420 schema-salad==2.6.20170806163416 avro==1.8.1 ruamel.yaml==0.14.12 requests==2.18.4
 RUN pip install functools32==3.2.3.post2
 
 #Patch the cwltool code that sets up the docker run command line
@@ -47,32 +47,17 @@ RUN pip install functools32==3.2.3.post2
 #of python is the right one?
 COPY job.patch /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/job.patch
-COPY process.patch /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
-RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/process.patch
 COPY main.patch /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
 RUN patch -d /usr/local/lib/python2.7/dist-packages/cwltool/ < /usr/local/lib/python2.7/dist-packages/cwltool/main.patch
-
-#Add ubuntu user and group
-RUN groupadd -r -g 1000 ubuntu && useradd -r -g ubuntu -u 1000 ubuntu
-
-#create /home/ubuntu in the root as owned by ubuntu
-RUN mkdir /home/ubuntu
-RUN chown ubuntu:ubuntu /home/ubuntu
-
-#install Dockstore for user ubuntu
-COPY .dockstore/ /home/ubuntu/.dockstore
-RUN chown -R ubuntu:ubuntu /home/ubuntu/.dockstore
-COPY Dockstore/ /home/ubuntu/Dockstore
-RUN chown -R ubuntu:ubuntu /home/ubuntu/Dockstore && chmod a+x /home/ubuntu/Dockstore/dockstore
-
-ENV PATH /home/ubuntu/Dockstore/:$PATH
-#ENV HOME /home/ubuntu
 
 #copy dockstore files to root so root can run dockstore
 COPY .dockstore/ /root/.dockstore
 COPY Dockstore/ /root/Dockstore
 RUN mkdir /root/.dockstore/plugins
 RUN chmod a+x /root/Dockstore/dockstore
+RUN mkdir /root/.dockstore/libraries
+#install newer Cromwell jar file cromwell-30.2.jar as cromwell-29.jar since Dockstore hard codes the version
+RUN wget https://github.com/broadinstitute/cromwell/releases/download/30.2/cromwell-30.2.jar -O /root/.dockstore/libraries/cromwell-29.jar
 
 ENV PATH /root/Dockstore/:$PATH
 ENV HOME /root

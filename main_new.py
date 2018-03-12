@@ -1,33 +1,47 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from __future__ import absolute_import
 
 import argparse
+import collections
 import functools
 import json
 import logging
 import os
 import sys
 import tempfile
+from typing import (IO, Any, AnyStr, Callable, Dict, List, Sequence, Text, Tuple,
+                    Union, cast)
 
 import pkg_resources  # part of setuptools
 import requests
+import six
+import string
+
 import ruamel.yaml as yaml
 import schema_salad.validate as validate
-from schema_salad.ref_resolver import Loader, Fetcher, file_uri, uri_file_path
+from schema_salad.ref_resolver import Fetcher, Loader, file_uri, uri_file_path
 from schema_salad.sourceline import strip_dup_lineno
-from typing import (Union, Any, AnyStr, cast, Callable, Dict, Sequence, Text,
-                    Tuple, IO)
 
-from . import draft2tool
-from . import workflow
-from .builder import adjustFileObjs
-from .pathmapper import adjustDirObjs
-from .cwlrdf import printrdf, printdot
-from .errors import WorkflowException, UnsupportedRequirement
-from .load_tool import fetch_document, validate_document, make_tool
+from . import draft2tool, workflow
+from .builder import Builder
+from .cwlrdf import printdot, printrdf
+from .errors import UnsupportedRequirement, WorkflowException
+from .load_tool import fetch_document, make_tool, validate_document, jobloaderctx
+from .mutation import MutationManager
 from .pack import pack
-from .process import shortname, Process, getListing, relocateOutputs, cleanIntermediate, scandeps, normalizeFilesDirs
-from .resolver import tool_resolver
+from .pathmapper import (adjustDirObjs, adjustFileObjs, get_listing,
+                         trim_listing, visit_class)
+from .process import (Process, cleanIntermediate, normalizeFilesDirs,
+                      relocateOutputs, scandeps, shortname, use_custom_schema,
+                      use_standard_schema)
+from .resolver import ga4gh_tool_registries, tool_resolver
+from .software_requirements import DependenciesConfiguration, get_container_from_software_requirements, SOFTWARE_REQUIREMENTS_ENABLED
 from .stdfsaccess import StdFsAccess
+from .update import ALLUPDATES, UPDATES
+from .utils import onWindows, windows_default_container_id
+from ruamel.yaml.comments import Comment, CommentedSeq, CommentedMap
+
 
 _logger = logging.getLogger("cwltool")
 
@@ -127,6 +141,7 @@ def arg_parser():  # type: () -> argparse.ArgumentParser
     exgroup.add_argument("--pack", action="store_true", help="Combine components into single document and print.")
     exgroup.add_argument("--version", action="store_true", help="Print version and exit")
     exgroup.add_argument("--validate", action="store_true", help="Validate CWL document only.")
+    exgroup.add_argument("--print-supported-versions", action="store_true", help="Print supported CWL specs.")
 
     exgroup = parser.add_mutually_exclusive_group()
     exgroup.add_argument("--strict", action="store_true",
@@ -135,10 +150,29 @@ def arg_parser():  # type: () -> argparse.ArgumentParser
     exgroup.add_argument("--non-strict", action="store_false", help="Lenient validation (ignore unrecognized fields)",
                          default=True, dest="strict")
 
+    parser.add_argument("--skip-schemas", action="store_true",
+            help="Skip loading of schemas", default=True, dest="skip_schemas")
+
     exgroup = parser.add_mutually_exclusive_group()
     exgroup.add_argument("--verbose", action="store_true", help="Default logging")
     exgroup.add_argument("--quiet", action="store_true", help="Only print warnings and errors.")
     exgroup.add_argument("--debug", action="store_true", help="Print even more logging")
+
+    dependency_resolvers_configuration_help = argparse.SUPPRESS
+    dependencies_directory_help = argparse.SUPPRESS
+    use_biocontainers_help = argparse.SUPPRESS
+    conda_dependencies = argparse.SUPPRESS
+
+    if SOFTWARE_REQUIREMENTS_ENABLED:
+        dependency_resolvers_configuration_help = "Dependency resolver configuration file describing how to adapt 'SoftwareRequirement' packages to current system."
+        dependencies_directory_help = "Defaut root directory used by dependency resolvers configuration."
+        use_biocontainers_help = "Use biocontainers for tools without an explicitly annotated Docker container."
+        conda_dependencies = "Short cut to use Conda to resolve 'SoftwareRequirement' packages."
+
+    parser.add_argument("--beta-dependency-resolvers-configuration", default=None, help=dependency_resolvers_configuration_help)
+    parser.add_argument("--beta-dependencies-directory", default=None, help=dependencies_directory_help)
+    parser.add_argument("--beta-use-biocontainers", default=None, help=use_biocontainers_help, action="store_true")
+    parser.add_argument("--beta-conda-dependencies", default=None, help=conda_dependencies, action="store_true")
 
     parser.add_argument("--tool-help", action="store_true", help="Print command line help for tool")
 
@@ -147,8 +181,12 @@ def arg_parser():  # type: () -> argparse.ArgumentParser
                                                 "relative to primary file or current working directory.")
 
     parser.add_argument("--enable-dev", action="store_true",
-                        help="Allow loading and running development versions "
+                        help="Enable loading and running development versions "
                              "of CWL spec.", default=False)
+
+    parser.add_argument("--enable-ext", action="store_true",
+                        help="Enable loading and running cwltool extensions "
+                             "to CWL spec.", default=False)
 
     parser.add_argument("--default-container",
                         help="Specify a default docker container that will be used if the workflow fails to specify one.")
@@ -161,7 +199,16 @@ def arg_parser():  # type: () -> argparse.ArgumentParser
                         help="Will be passed to `docker run` as the '--net' "
                              "parameter. Implies '--enable-net'.")
 
-    parser.add_argument("--on-error", type=str,
+    exgroup = parser.add_mutually_exclusive_group()
+    exgroup.add_argument("--enable-ga4gh-tool-registry", action="store_true", help="Enable resolution using GA4GH tool registry API",
+                        dest="enable_ga4gh_tool_registry", default=True)
+    exgroup.add_argument("--disable-ga4gh-tool-registry", action="store_false", help="Disable resolution using GA4GH tool registry API",
+                        dest="enable_ga4gh_tool_registry", default=True)
+
+    parser.add_argument("--add-ga4gh-tool-registry", action="append", help="Add a GA4GH tool registry endpoint to use for resolution, default %s" % ga4gh_tool_registries,
+                        dest="ga4gh_tool_registries", default=[])
+
+    parser.add_argument("--on-error",
                         help="Desired workflow behavior when a step fails.  One of 'stop' or 'continue'. "
                              "Default is 'stop'.", default="stop", choices=("stop", "continue"))
 
@@ -174,8 +221,14 @@ def arg_parser():  # type: () -> argparse.ArgumentParser
                          dest="compute_checksum")
 
     parser.add_argument("--relax-path-checks", action="store_true",
-                        default=False, help="Relax requirements on path names. Currently "
-                                            "allows spaces.", dest="relax_path_checks")
+                        default=False, help="Relax requirements on path names to permit "
+                        "spaces and hash characters.", dest="relax_path_checks")
+    exgroup.add_argument("--make-template", action="store_true",
+                         help="Generate a template input object")
+
+    parser.add_argument("--force-docker-pull", action="store_true",
+                        default=False, help="Pull latest docker image even if"
+                                            " it is locally present", dest="force_docker_pull")
     parser.add_argument("workflow", type=Text, nargs="?", default=None)
     parser.add_argument("job_order", nargs=argparse.REMAINDER)
 
@@ -198,10 +251,22 @@ def single_job_executor(t,  # type: Process
         raise WorkflowException("Must provide 'basedir' in kwargs")
 
     output_dirs = set()
-    finaloutdir = kwargs.get("outdir")
-    kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
-        "tmp_outdir_prefix") else tempfile.mkdtemp() 
+
+    #workflows run in the CGP will use the /datastore directory
+    #on the host to store all results. This has to be a fixed directory
+    #so that Docker containers created by other Docker containers
+    #can know its location ahead of time so they can access output 
+    #of other containers and can write results to the same directory
+    #Dockstore tool runner assumes all results are in /datastore
+    kwargs["outdir"] = '/datastore'
+    #Final results from the workflow in the CGP is stored in /datastore also
+    finaloutdir = os.path.abspath(kwargs.get("outdir")) if kwargs.get("outdir") else None
+    #kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
+    #    "tmp_outdir_prefix") else tempfile.mkdtemp()
+
     output_dirs.add(kwargs["outdir"])
+
+    kwargs["mutation_manager"] = MutationManager()
 
     jobReqs = None
     if "cwl:requirements" in job_order_object:
@@ -219,6 +284,9 @@ def single_job_executor(t,  # type: Process
     try:
         for r in jobiter:
             if r:
+                builder = kwargs.get("builder", None)  # type: Builder
+                if builder is not None:
+                    r.builder = builder
                 if r.outdir:
                     output_dirs.add(r.outdir)
                 r.run(**kwargs)
@@ -233,7 +301,8 @@ def single_job_executor(t,  # type: Process
 
     if final_output and final_output[0] and finaloutdir:
         final_output[0] = relocateOutputs(final_output[0], finaloutdir,
-                                          output_dirs, kwargs.get("move_outputs"))
+                                          output_dirs, kwargs.get("move_outputs"),
+                                          kwargs["make_fs_access"](""))
 
     if kwargs.get("rm_tmpdir"):
         cleanIntermediate(output_dirs)
@@ -389,26 +458,74 @@ def generate_parser(toolparser, tool, namemap, records):
 
     return toolparser
 
+def generate_example_input(inptype):
+    # type: (Union[Text, Dict[Text, Any]]) -> Any
+    defaults = { 'null': 'null',
+                 'Any': 'null',
+                 'boolean': False,
+                 'int': 0,
+                 'long': 0,
+                 'float': 0.1,
+                 'double': 0.1,
+                 'string': 'default_string',
+                 'File': { 'class': 'File',
+                           'path': 'default/file/path' },
+                 'Directory': { 'class': 'Directory',
+                                'path': 'default/directory/path' } }
+    if (not isinstance(inptype, str) and
+        not isinstance(inptype, collections.Mapping)
+        and isinstance(inptype, collections.MutableSet)):
+        if len(inptype) == 2 and 'null' in inptype:
+            inptype.remove('null')
+            return generate_example_input(inptype[0])
+            # TODO: indicate that this input is optional
+        else:
+            raise Exception("multi-types other than optional not yet supported"
+                            " for generating example input objects: %s"
+                            % inptype)
+    if isinstance(inptype, collections.Mapping) and 'type' in inptype:
+        if inptype['type'] == 'array':
+            return [ generate_example_input(inptype['items']) ]
+        elif inptype['type'] == 'enum':
+            return 'valid_enum_value'
+            # TODO: list valid values in a comment
+        elif inptype['type'] == 'record':
+            record = {}
+            for field in inptype['fields']:
+                record[shortname(field['name'])] = generate_example_input(
+                    field['type'])
+            return record
+    elif isinstance(inptype, str):
+        return defaults.get(inptype, 'custom_type')
+        # TODO: support custom types, complex arrays
+
+
+def generate_input_template(tool):
+    # type: (Process) -> Dict[Text, Any]
+    template = {}
+    for inp in tool.tool["inputs"]:
+        name = shortname(inp["id"])
+        inptype = inp["type"]
+        template[name] = generate_example_input(inptype)
+    return template
+
+
 
 def load_job_order(args, t, stdin, print_input_deps=False, relative_deps=False,
                    stdout=sys.stdout, make_fs_access=None, fetcher_constructor=None):
-    # type: (argparse.Namespace, Process, IO[Any], bool, bool, IO[Any], Callable[[Text], StdFsAccess], Callable[[Dict[unicode, unicode], requests.sessions.Session], Fetcher]) -> Union[int, Tuple[Dict[Text, Any], Text]]
+    # type: (argparse.Namespace, Process, IO[Any], bool, bool, IO[Any], Callable[[Text], StdFsAccess], Callable[[Dict[Text, Text], requests.sessions.Session], Fetcher]) -> Union[int, Tuple[Dict[Text, Any], Text]]
 
     job_order_object = None
 
-    jobloaderctx = {
-        u"path": {u"@type": u"@id"},
-        u"location": {u"@type": u"@id"},
-        u"format": {u"@type": u"@id"},
-        u"id": u"@id"}
-    jobloaderctx.update(t.metadata.get("$namespaces", {}))
-    loader = Loader(jobloaderctx, fetcher_constructor=fetcher_constructor)
+    _jobloaderctx = jobloaderctx.copy()
+    _jobloaderctx.update(t.metadata.get("$namespaces", {}))
+    loader = Loader(_jobloaderctx, fetcher_constructor=fetcher_constructor)  # type: ignore
 
     if len(args.job_order) == 1 and args.job_order[0][0] != "-":
         job_order_file = args.job_order[0]
     elif len(args.job_order) == 1 and args.job_order[0] == "-":
-        job_order_object = yaml.load(stdin)
-        job_order_object, _ = loader.resolve_all(job_order_object, "")
+        job_order_object = yaml.round_trip_load(stdin)
+        job_order_object, _ = loader.resolve_all(job_order_object, file_uri(os.getcwd()) + "/")
     else:
         job_order_file = None
 
@@ -436,9 +553,9 @@ def load_job_order(args, t, stdin, print_input_deps=False, relative_deps=False,
             for record_name in records:
                 record = {}
                 record_items = {
-                    k: v for k, v in cmd_line.iteritems()
+                    k: v for k, v in six.iteritems(cmd_line)
                     if k.startswith(record_name)}
-                for key, value in record_items.iteritems():
+                for key, value in six.iteritems(record_items):
                     record[key[len(record_name) + 1:]] = value
                     del cmd_line[key]
                 cmd_line[str(record_name)] = record
@@ -453,6 +570,8 @@ def load_job_order(args, t, stdin, print_input_deps=False, relative_deps=False,
                     return 1
             else:
                 job_order_object = {"id": args.workflow}
+
+            del cmd_line["job_order"]
 
             job_order_object.update({namemap[k]: v for k, v in cmd_line.items()})
 
@@ -469,7 +588,7 @@ def load_job_order(args, t, stdin, print_input_deps=False, relative_deps=False,
 
     if not job_order_object and len(t.tool["inputs"]) > 0:
         if toolparser:
-            print u"\nOptions for %s " % args.workflow
+            print(u"\nOptions for {} ".format(args.workflow))
             toolparser.print_help()
         _logger.error("")
         _logger.error("Input object required, use --help for details")
@@ -485,11 +604,21 @@ def load_job_order(args, t, stdin, print_input_deps=False, relative_deps=False,
             p["location"] = p["path"]
             del p["path"]
 
-    adjustDirObjs(job_order_object, pathToLoc)
-    adjustFileObjs(job_order_object, pathToLoc)
+    def addSizes(p):
+        if 'location' in p:
+            try:
+                p["size"] = os.stat(p["location"][7:]).st_size  # strip off file://
+            except OSError:
+                pass
+        elif 'contents' in p:
+                p["size"] = len(p['contents'])
+        else:
+            return  # best effort
+
+    visit_class(job_order_object, ("File", "Directory"), pathToLoc)
+    visit_class(job_order_object, ("File"), addSizes)
+    adjustDirObjs(job_order_object, trim_listing)
     normalizeFilesDirs(job_order_object)
-    adjustDirObjs(job_order_object, cast(Callable[..., Any],
-                                         functools.partial(getListing, make_fs_access(input_basedir))))
 
     if "cwl:tool" in job_order_object:
         del job_order_object["cwl:tool"]
@@ -531,14 +660,13 @@ def printdeps(obj, document_loader, stdout, relative_deps, uri, basedir=None):
         else:
             raise Exception(u"Unknown relative_deps %s" % relative_deps)
 
-        adjustFileObjs(deps, functools.partial(makeRelative, base))
-        adjustDirObjs(deps, functools.partial(makeRelative, base))
+        visit_class(deps, ("File", "Directory"), functools.partial(makeRelative, base))
 
     stdout.write(json.dumps(deps, indent=4))
 
 
 def print_pack(document_loader, processobj, uri, metadata):
-    # type: (Loader, Union[Dict[unicode, Any], List[Dict[unicode, Any]]], unicode, Dict[unicode, Any]) -> str
+    # type: (Loader, Union[Dict[Text, Any], List[Dict[Text, Any]]], Text, Dict[Text, Any]) -> str
     packed = pack(document_loader, processobj, uri, metadata)
     if len(packed["$graph"]) > 1:
         return json.dumps(packed, indent=4)
@@ -554,6 +682,15 @@ def versionstring():
     else:
         return u"%s %s" % (sys.argv[0], "unknown version")
 
+def supportedCWLversions(enable_dev):
+    # type: (bool) -> List[Text]
+    # ALLUPDATES and UPDATES are dicts
+    if enable_dev:
+        versions = list(ALLUPDATES)
+    else:
+        versions = list(UPDATES)
+    versions.sort()
+    return versions
 
 def main(argsl=None,  # type: List[str]
          args=None,  # type: argparse.Namespace
@@ -566,9 +703,10 @@ def main(argsl=None,  # type: List[str]
          versionfunc=versionstring,  # type: Callable[[], Text]
          job_order_object=None,  # type: Union[Tuple[Dict[Text, Any], Text], int]
          make_fs_access=StdFsAccess,  # type: Callable[[Text], StdFsAccess]
-         fetcher_constructor=None,  # type: Callable[[Dict[unicode, unicode], requests.sessions.Session], Fetcher]
+         fetcher_constructor=None,  # type: Callable[[Dict[Text, Text], requests.sessions.Session], Fetcher]
          resolver=tool_resolver,
-         logger_handler=None
+         logger_handler=None,
+         custom_schema_callback=None  # type: Callable[[], None]
          ):
     # type: (...) -> int
 
@@ -584,10 +722,15 @@ def main(argsl=None,  # type: List[str]
                 argsl = sys.argv[1:]
             args = arg_parser().parse_args(argsl)
 
+        # If On windows platform, A default Docker Container is Used if not explicitely provided by user
+        if onWindows() and not args.default_container:
+            # This docker image is a minimal alpine image with bash installed(size 6 mb). source: https://github.com/frol/docker-alpine-bash
+            args.default_container = windows_default_container_id
+
         # If caller provided custom arguments, it may be not every expected
         # option is set, so fill in no-op defaults to avoid crashing when
         # dereferencing them in args.
-        for k, v in {'print_deps': False,
+        for k, v in six.iteritems({'print_deps': False,
                      'print_pre': False,
                      'print_rdf': False,
                      'print_dot': False,
@@ -600,7 +743,9 @@ def main(argsl=None,  # type: List[str]
                      'debug': False,
                      'version': False,
                      'enable_dev': False,
+                     'enable_ext': False,
                      'strict': True,
+                     'skip_schemas': False,
                      'rdf_serializer': None,
                      'basedir': None,
                      'tool_help': False,
@@ -609,31 +754,54 @@ def main(argsl=None,  # type: List[str]
                      'pack': False,
                      'on_error': 'continue',
                      'relax_path_checks': False,
-                     'validate': False}.iteritems():
+                     'validate': False,
+                     'enable_ga4gh_tool_registry': False,
+                     'ga4gh_tool_registries': [],
+                     'find_default_container': None,
+                     'make_template': False
+        }):
             if not hasattr(args, k):
                 setattr(args, k, v)
-        #HACK; Setting tmp_outdir_prefix to /datastore/
-        setattr(args, 'tmp_outdir_prefix', '/datastore/') 
+
         if args.quiet:
             _logger.setLevel(logging.WARN)
         if args.debug:
             _logger.setLevel(logging.DEBUG)
 
         if args.version:
-            print versionfunc()
+            print(versionfunc())
             return 0
         else:
             _logger.info(versionfunc())
+
+        if args.print_supported_versions:
+            print("\n".join(supportedCWLversions(args.enable_dev)))
+            return 0
 
         if not args.workflow:
             if os.path.isfile("CWLFile"):
                 setattr(args, "workflow", "CWLFile")
             else:
                 _logger.error("")
-                _logger.error("CWL document required, try --help for details")
+                _logger.error("CWL document required, no input file was provided")
+                arg_parser().print_help()
                 return 1
         if args.relax_path_checks:
             draft2tool.ACCEPTLIST_RE = draft2tool.ACCEPTLIST_EN_RELAXED_RE
+
+        if args.ga4gh_tool_registries:
+            ga4gh_tool_registries[:] = args.ga4gh_tool_registries
+        if not args.enable_ga4gh_tool_registry:
+            del ga4gh_tool_registries[:]
+
+        if custom_schema_callback:
+            custom_schema_callback()
+        elif args.enable_ext:
+            res = pkg_resources.resource_stream(__name__, 'extensions.yml')
+            use_custom_schema("v1.0", "http://commonwl.org/cwltool", res.read())
+            res.close()
+        else:
+            use_standard_schema("v1.0")
 
         try:
             document_loader, workflowobj, uri = fetch_document(args.workflow, resolver=resolver,
@@ -647,10 +815,8 @@ def main(argsl=None,  # type: List[str]
                 = validate_document(document_loader, workflowobj, uri,
                                     enable_dev=args.enable_dev, strict=args.strict,
                                     preprocess_only=args.print_pre or args.pack,
-                                    fetcher_constructor=fetcher_constructor)
-
-            if args.validate:
-                return 0
+                                    fetcher_constructor=fetcher_constructor,
+                                    skip_schemas=args.skip_schemas)
 
             if args.pack:
                 stdout.write(print_pack(document_loader, processobj, uri, metadata))
@@ -660,11 +826,31 @@ def main(argsl=None,  # type: List[str]
                 stdout.write(json.dumps(processobj, indent=4))
                 return 0
 
+            conf_file = getattr(args, "beta_dependency_resolvers_configuration", None)  # Text
+            use_conda_dependencies = getattr(args, "beta_conda_dependencies", None)  # Text
+
+            make_tool_kwds = vars(args)
+
+            job_script_provider = None  # type: Callable[[Any, List[str]], Text]
+            if conf_file or use_conda_dependencies:
+                dependencies_configuration = DependenciesConfiguration(args)  # type: DependenciesConfiguration
+                make_tool_kwds["job_script_provider"] = dependencies_configuration
+
+            make_tool_kwds["find_default_container"] = functools.partial(find_default_container, args)
+
             tool = make_tool(document_loader, avsc_names, metadata, uri,
-                             makeTool, vars(args))
+                             makeTool, make_tool_kwds)
+            if args.make_template:
+                yaml.safe_dump(generate_input_template(tool), sys.stdout,
+                               default_flow_style=False, indent=4,
+                               block_seq_indent=2)
+                return 0
+
+            if args.validate:
+                return 0
 
             if args.print_rdf:
-                printrdf(tool, document_loader.ctx, args.rdf_serializer, stdout)
+                stdout.write(printrdf(tool, document_loader.ctx, args.rdf_serializer))
                 return 0
 
             if args.print_dot:
@@ -707,13 +893,16 @@ def main(argsl=None,  # type: List[str]
                 setattr(args, 'move_outputs', "copy")
             setattr(args, "tmp_outdir_prefix", args.cachedir)
 
-        if job_order_object is None:
-            job_order_object = load_job_order(args, tool, stdin,
-                                              print_input_deps=args.print_input_deps,
-                                              relative_deps=args.relative_deps,
-                                              stdout=stdout,
-                                              make_fs_access=make_fs_access,
-                                              fetcher_constructor=fetcher_constructor)
+        try:
+            if job_order_object is None:
+                    job_order_object = load_job_order(args, tool, stdin,
+                                                      print_input_deps=args.print_input_deps,
+                                                      relative_deps=args.relative_deps,
+                                                      stdout=stdout,
+                                                      make_fs_access=make_fs_access,
+                                                      fetcher_constructor=fetcher_constructor)
+        except SystemExit as e:
+            return e.code
 
         if isinstance(job_order_object, int):
             return job_order_object
@@ -730,14 +919,20 @@ def main(argsl=None,  # type: List[str]
 
             # This is the workflow output, it needs to be written
             if out is not None:
+
                 def locToPath(p):
+                    for field in ("path", "nameext", "nameroot", "dirname"):
+                        if field in p:
+                            del p[field]
                     if p["location"].startswith("file://"):
                         p["path"] = uri_file_path(p["location"])
 
-                adjustDirObjs(out, locToPath)
-                adjustFileObjs(out, locToPath)
+                visit_class(out, ("File", "Directory"), locToPath)
 
-                if isinstance(out, basestring):
+                # Unsetting the Generation fron final output object
+                visit_class(out,("File",), MutationManager().unset_generation)
+
+                if isinstance(out, six.string_types):
                     stdout.write(out)
                 else:
                     stdout.write(json.dumps(out, indent=4))
@@ -745,7 +940,7 @@ def main(argsl=None,  # type: List[str]
                 stdout.flush()
 
             if status != "success":
-                _logger.warn(u"Final process status is %s", status)
+                _logger.warning(u"Final process status is %s", status)
                 return 1
             else:
                 _logger.info(u"Final process status is %s", status)
@@ -763,7 +958,7 @@ def main(argsl=None,  # type: List[str]
         except WorkflowException as exc:
             _logger.error(
                 u"Workflow error, try again with --debug for more "
-                "information:\n%s", strip_dup_lineno(unicode(exc)), exc_info=args.debug)
+                "information:\n%s", strip_dup_lineno(six.text_type(exc)), exc_info=args.debug)
             return 1
         except Exception as exc:
             _logger.error(
@@ -774,6 +969,16 @@ def main(argsl=None,  # type: List[str]
     finally:
         _logger.removeHandler(stderr_handler)
         _logger.addHandler(defaultStreamHandler)
+
+
+def find_default_container(args, builder):
+    default_container = None
+    if args.default_container:
+        default_container = args.default_container
+    elif args.beta_use_biocontainers:
+        default_container = get_container_from_software_requirements(args, builder)
+
+    return default_container
 
 
 if __name__ == "__main__":

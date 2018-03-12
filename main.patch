@@ -1,21 +1,26 @@
---- main.py	2017-05-23 18:51:12.839227841 +0000
-+++ main_new.py	2017-05-23 22:41:39.979009776 +0000
-@@ -200,7 +200,7 @@
+--- main.py	2018-03-02 18:05:16.683793036 +0000
++++ main_new.py	2018-03-03 06:31:39.069337026 +0000
+@@ -251,10 +251,21 @@
+         raise WorkflowException("Must provide 'basedir' in kwargs")
+ 
      output_dirs = set()
-     finaloutdir = kwargs.get("outdir")
-     kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
++
++    #workflows run in the CGP will use the /datastore directory
++    #on the host to store all results. This has to be a fixed directory
++    #so that Docker containers created by other Docker containers
++    #can know its location ahead of time so they can access output 
++    #of other containers and can write results to the same directory
++    #Dockstore tool runner assumes all results are in /datastore
++    kwargs["outdir"] = '/datastore'
++    #Final results from the workflow in the CGP is stored in /datastore also
+     finaloutdir = os.path.abspath(kwargs.get("outdir")) if kwargs.get("outdir") else None
+-    kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
 -        "tmp_outdir_prefix") else tempfile.mkdtemp()
-+        "tmp_outdir_prefix") else tempfile.mkdtemp() 
++    #kwargs["outdir"] = tempfile.mkdtemp(prefix=kwargs["tmp_outdir_prefix"]) if kwargs.get(
++    #    "tmp_outdir_prefix") else tempfile.mkdtemp()
++
      output_dirs.add(kwargs["outdir"])
++
+     kwargs["mutation_manager"] = MutationManager()
  
      jobReqs = None
-@@ -612,7 +612,8 @@
-                      'validate': False}.iteritems():
-             if not hasattr(args, k):
-                 setattr(args, k, v)
--
-+        #HACK; Setting tmp_outdir_prefix to /datastore/
-+        setattr(args, 'tmp_outdir_prefix', '/datastore/') 
-         if args.quiet:
-             _logger.setLevel(logging.WARN)
-         if args.debug:
