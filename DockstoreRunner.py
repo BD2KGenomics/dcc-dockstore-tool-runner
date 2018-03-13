@@ -444,12 +444,6 @@ class DockstoreRunner:
         #by the dockstore command below
         os.environ["TMPDIR"] = self.tmp_dir
 
-        #dockstore should be on the PATH assuming we are running as root as it was
-        #installed in /root in the Dockerfile
-        print("Installing Dockstore client at root if this is running inside our Docker image")
-        cmd = "cp -R /home/ubuntu/.dockstore ./"
-        self.run_command(cmd, self.MAX_ATTEMPTS, self.DELAY_IN_SECONDS, True)
-
         print("Calling Dockstore to launch a Dockstore tool")
         cmd = "dockstore " + self.launch_type + " launch --debug --entry "+self.docker_uri+" --json "+transformed_json_path
         self.run_command(cmd, self.MAX_PIPELINE_ATTEMPTS, self.DELAY_IN_SECONDS, cwd=self.tmp_dir)
