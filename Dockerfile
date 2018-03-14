@@ -69,6 +69,8 @@ RUN chmod a+x /usr/local/bin/DockstoreRunner.py
 #set the following env var so dockstore does not question
 #the fact that we are running as root
 ENV DOCKSTORE_ROOT 1
+#Indicate to Dockstore where the dockstore jar file is located 
+ENV DOCKSTORE_HOME /root/.dockstore
 
 #container must run as root in order to access docker.sock on the host
 #becuase ubuntu is not a member of the host's docker.sock docker group
